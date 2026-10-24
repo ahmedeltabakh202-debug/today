@@ -6,7 +6,29 @@
 <meta name="theme-color" content="#0a3d2e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="إدارة اليوم">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a3d2e' width='100' height='100' rx='20'/><text y='.9em' x='50%' text-anchor='middle' font-size='60'>☪</text></svg>">
 <title>إدارة اليوم والحياة</title>
+<script>
+// Minimal PWA manifest
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+    self.addEventListener('notificationclick', e => {
+      e.notification.close();
+      e.waitUntil(clients.matchAll({type:'window'}).then(list => {
+        if (list.length) list[0].focus();
+        else clients.openWindow('/');
+      }));
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
 <style>
   :root {
     --green-deep: #062e24;
@@ -38,6 +60,80 @@
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
     --nav-h: 72px;
   }
+  /* Dark Mode */
+  body.dark {
+    --bg: #0d1f1a;
+    --bg-pattern: #132a23;
+    --card: #152e26;
+    --card-hover: #1a362d;
+    --text: #e8f0ec;
+    --text-soft: #a8c0b5;
+    --text-muted: #6e8a7e;
+    --border: #243f35;
+    --border-soft: #1c342c;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+    --shadow: 0 6px 24px rgba(0,0,0,0.35);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.45);
+    --gold-soft: #3d3420;
+  }
+  body.dark .bottom-nav { background: rgba(21,46,38,0.95); }
+  body.dark .header { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  body.dark input, body.dark select, body.dark textarea { background: #1a362d; color: var(--text); border-color: var(--border); }
+  body.dark .check-item, body.dark .list-item, body.dark .note-item { background: #1a362d; }
+  body.dark .mood-btn { background: #1a362d; }
+  body.dark .water-drop { background: #1a362d; border-color: rgba(42,157,120,0.4); }
+  body.dark .nav-orb { box-shadow: 0 0 0 6px var(--bg), 0 0 0 7px var(--border), 0 12px 26px rgba(0,0,0,0.5), inset 0 2px 6px rgba(255,255,255,0.1); }
+
+  /* Water / Health / Badges */
+  .water-circles { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0 6px; }
+  .water-drop {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid rgba(42,157,120,0.35); background: #eef8f4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; cursor: pointer; transition: all 0.3s var(--ease);
+  }
+  .water-drop:active { transform: scale(0.88); }
+  .water-drop.filled {
+    background: linear-gradient(145deg, var(--green-mid), var(--green-light));
+    border-color: var(--green); color: #fff;
+    box-shadow: 0 3px 12px rgba(15,92,69,0.3); transform: scale(1.05);
+  }
+  .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .health-box {
+    background: var(--bg-pattern); border-radius: 14px; padding: 14px 12px;
+    text-align: center; border: 1px solid var(--border-soft);
+  }
+  .health-box .hb-val { font-size: 1.5rem; font-weight: 800; color: var(--green); }
+  .health-box .hb-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+  .badge-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    background: var(--bg-pattern); border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .badge.earned {
+    background: linear-gradient(135deg, rgba(201,162,39,0.15), rgba(15,92,69,0.1));
+    border-color: var(--gold); color: var(--green-dark);
+  }
+  .badge.earned .badge-ico { filter: none; }
+  .badge-ico { font-size: 1.1rem; filter: grayscale(1) opacity(0.5); }
+  .badge.earned .badge-ico { filter: none; }
+  .occ-card {
+    background: linear-gradient(135deg, rgba(201,162,39,0.12), rgba(15,92,69,0.08));
+    border: 1.5px solid var(--gold); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px;
+  }
+  .occ-title { font-size: 0.9rem; font-weight: 800; color: var(--gold-dark); margin-bottom: 4px; }
+  .occ-desc { font-size: 0.82rem; color: var(--text-soft); line-height: 1.7; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;
+    background: var(--bg-pattern); border: 1px solid transparent; cursor: pointer;
+  }
+  .cal-day.today { border-color: var(--gold); background: rgba(201,162,39,0.15); }
+  .cal-day.has { background: linear-gradient(135deg, rgba(15,92,69,0.15), rgba(201,162,39,0.1)); }
+  .cal-day .cd-pct { font-size: 0.6rem; color: var(--green); }
+  .share-btn { margin-top: 12px; }
 
   * {
     box-sizing: border-box;
@@ -1163,17 +1259,79 @@
 
   /* ══ New features ══ */
   .ptime { font-size: 0.64rem; opacity: 0.8; margin-top: 2px; font-weight: 600; }
+  .top-duo {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    align-items: stretch;
+  }
+  .top-duo .dua-banner {
+    flex: 0 0 70%;
+    max-width: 70%;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+  .top-duo .np-card {
+    flex: 0 0 calc(30% - 10px);
+    max-width: calc(30% - 10px);
+    margin-bottom: 0;
+    min-width: 0;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
   .np-card { cursor: pointer; background-image: var(--pat-green); }
   .np-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .top-duo .np-row { flex-direction: column; gap: 4px; }
   .np-label { font-size: 0.74rem; color: var(--gold-dark); font-weight: 700; }
+  .top-duo .np-label { font-size: 0.68rem; }
   .np-name { font-size: 1.25rem; font-weight: 800; color: var(--green-dark); }
+  .top-duo .np-name { font-size: 0.95rem; line-height: 1.3; }
   .np-side { text-align: left; }
+  .top-duo .np-side { text-align: center; }
   .np-time { font-size: 1.3rem; font-weight: 800; color: var(--green); }
+  .top-duo .np-time { font-size: 1.05rem; }
   .np-left { font-size: 0.78rem; color: var(--text-soft); }
+  .top-duo .np-left { font-size: 0.7rem; }
   .np-city { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.74rem; color: var(--text-muted); }
+  .top-duo .np-city { margin-top: 8px; padding-top: 6px; font-size: 0.62rem; line-height: 1.4; }
   .dua-text { font-size: 1.02rem; line-height: 2.1; text-align: center; color: var(--green-dark); padding: 4px 6px; }
-  .dua-fast { text-align: center; font-size: 0.82rem; font-weight: 700; color: var(--gold-dark); }
+  .dua-fast { text-align: center; font-size: 0.82rem; font-weight: 700; color: var(--gold-dark); margin-top: 6px; }
   .dua-fast:empty { display: none; }
+  .dua-banner {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 16px 18px 14px;
+    border-radius: 18px;
+    text-align: center;
+    background: linear-gradient(145deg, rgba(245,230,184,0.55), rgba(255,252,247,0.95));
+    border: 1.5px solid var(--gold);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  body.dark .dua-banner {
+    background: linear-gradient(145deg, rgba(61,52,32,0.6), rgba(21,46,38,0.95));
+  }
+  .dua-banner::before, .dua-banner::after {
+    content: '✦'; position: absolute; top: 8px; color: var(--gold); opacity: 0.45; font-size: 0.9rem;
+  }
+  .dua-banner::before { right: 14px; }
+  .dua-banner::after { left: 14px; }
+  .dua-banner-label {
+    font-size: 0.78rem; font-weight: 800; color: var(--gold-dark);
+    letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .dua-banner .dua-text {
+    font-size: 1.05rem; line-height: 2; color: var(--green-dark); font-weight: 600;
+  }
+  body.dark .dua-banner .dua-text { color: #f5e6b8; }
+  @media (max-width: 380px) {
+    .top-duo .dua-banner .dua-text { font-size: 0.92rem; line-height: 1.75; }
+    .top-duo .np-name { font-size: 0.85rem; }
+    .top-duo .np-time { font-size: 0.95rem; }
+  }
   .hero-streak { margin-top: 8px; font-size: 0.78rem; font-weight: 700; color: var(--gold-bright); }
   .hero-streak:empty { display: none; }
   .kh-info { margin: 10px 0 12px; font-size: 0.86rem; line-height: 1.9; color: var(--text-soft); }
@@ -1214,6 +1372,8 @@
       <span id="titleLock" onclick="openStudyLock()" style="cursor:pointer;padding:6px 2px">إدارة اليوم</span>
     </h1>
     <div class="header-actions">
+      <button class="icon-btn" id="darkBtn" onclick="toggleDark()" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
+      <button class="icon-btn" id="langBtn" onclick="toggleLang()" title="اللغة / Language" aria-label="اللغة">🌐</button>
       <button class="icon-btn" onclick="openModal('settingsModal')" title="الإعدادات" aria-label="الإعدادات">⚙</button>
       <button class="icon-btn" onclick="resetDay()" title="إعادة ضبط اليوم" aria-label="إعادة ضبط">↻</button>
     </div>
@@ -1228,15 +1388,31 @@
   <!-- 1. اليوم -->
   <section id="sec-home" class="section active">
 
-    <div class="card np-card" onclick="askLocation()">
-      <div class="np-row"><div><div class="np-label">الصلاة القادمة</div><div class="np-name" id="npName">—</div></div>
-        <div class="np-side"><div class="np-time" id="npTime">—</div><div class="np-left" id="npLeft"></div></div></div>
-      <div class="np-city" id="npCity">📍 اضغط لتحديد موقعك</div>
+    <!-- دعاء اليوم (70%) + الصلاة القادمة (30%) جنب بعض -->
+    <div class="top-duo">
+      <div class="dua-banner" id="duaBanner">
+        <div class="dua-banner-label">🤍 دعاء اليوم</div>
+        <div class="dua-text" id="duaText">...</div>
+        <div class="dua-fast" id="duaFast"></div>
+      </div>
+      <div class="card np-card" onclick="askLocation()">
+        <div class="np-row">
+          <div>
+            <div class="np-label" data-i18n="nextPrayer">الصلاة القادمة</div>
+            <div class="np-name" id="npName">—</div>
+          </div>
+          <div class="np-side">
+            <div class="np-time" id="npTime">—</div>
+            <div class="np-left" id="npLeft"></div>
+          </div>
+        </div>
+        <div class="np-city" id="npCity" data-i18n="tapLocation">📍 اضغط لتحديد موقعك</div>
+      </div>
     </div>
 
     <div class="hero" id="hero">
       <div class="hero-bismillah">﷽</div>
-      <div class="hero-label"><span>✦</span> حصاد يومك <span>✦</span></div>
+      <div class="hero-label"><span>✦</span> <span data-i18n="harvest">حصاد يومك</span> <span>✦</span></div>
       <div class="hero-body">
         <div class="ring">
           <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -1249,7 +1425,7 @@
           </div>
         </div>
         <div class="hero-text">
-          <div class="hero-claim">أنجزت اليوم</div>
+          <div class="hero-claim" data-i18n="achievedToday">أنجزت اليوم</div>
           <div class="hero-pct"><span id="heroPct">0</span><small>٪</small></div>
           <div class="hero-msg" id="heroMsg">ابدأ يومك باسم الله</div>
           <div class="hero-streak" id="heroStreak"></div>
@@ -1261,17 +1437,11 @@
     <div class="card">
       <div class="card-title"><span class="title-icon gold">🌙</span> تفاصيل الإنجاز</div>
       <div id="achRows"></div>
-      <div class="ach-chips-title">أنجزته حتى الآن</div>
+      <div class="ach-chips-title" data-i18n="doneSoFar">أنجزته حتى الآن</div>
       <div class="ach-chips" id="achChips"></div>
     </div>
 
     <div class="divider-ornament"><span>۞</span></div>
-
-    <div class="card dua-card">
-      <div class="card-title"><span class="title-icon gold">🤍</span> دعاء اليوم</div>
-      <div class="dua-text" id="duaText"></div>
-      <div class="dua-fast" id="duaFast"></div>
-    </div>
 
     <div class="card">
       <div class="card-title"><span class="title-icon">🕌</span> صلاة اليوم</div>
@@ -1293,6 +1463,58 @@
         <button class="mood-btn" data-mood="4" onclick="setMood(4)">😊</button>
         <button class="mood-btn" data-mood="5" onclick="setMood(5)">🤩</button>
       </div>
+    </div>
+
+    <!-- Islamic occasions -->
+    <div class="occ-card" id="occCard" style="display:none">
+      <div class="occ-title" id="occTitle"></div>
+      <div class="occ-desc" id="occDesc"></div>
+    </div>
+
+    <!-- Health: Water + Sleep + Exercise + Weight -->
+    <div class="card" id="healthCard">
+      <div class="card-title"><span class="title-icon">💚</span> صحتي اليوم</div>
+      <div style="font-size:0.85rem;font-weight:700;color:var(--green-dark);margin-bottom:4px">💧 شرب الماء</div>
+      <div class="water-circles" id="waterCircles"></div>
+      <div style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">
+        <span id="waterCount">0</span> / <span id="waterGoalLabel">8</span> أكواب
+      </div>
+      <div class="health-grid">
+        <div class="health-box">
+          <div class="hb-val" id="sleepVal">—</div>
+          <div class="hb-label">ساعات النوم</div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="adjSleep(-0.5)">−</button>
+            <button class="btn btn-ghost btn-sm" onclick="adjSleep(0.5)">＋</button>
+          </div>
+        </div>
+        <div class="health-box">
+          <div class="hb-val" id="exVal">—</div>
+          <div class="hb-label">دقائق رياضة</div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="adjExercise(-10)">−</button>
+            <button class="btn btn-ghost btn-sm" onclick="adjExercise(10)">＋</button>
+          </div>
+        </div>
+        <div class="health-box">
+          <div class="hb-val" id="weightVal">—</div>
+          <div class="hb-label">الوزن (كجم)</div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;align-items:center">
+            <input type="number" id="weightInput" min="20" max="300" step="0.1" placeholder="—" style="margin:0;width:72px;padding:6px 8px;text-align:center;font-size:0.9rem" onchange="setWeight(this.value)">
+          </div>
+        </div>
+        <div class="health-box">
+          <div class="hb-val" id="moodHealthVal">—</div>
+          <div class="hb-label">المزاج</div>
+          <div style="font-size:1.4rem;margin-top:6px" id="moodHealthIcon">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="card">
+      <div class="card-title"><span class="title-icon gold">🏆</span> الإنجازات والشارات</div>
+      <div class="badge-grid" id="badgeGrid"></div>
     </div>
   
   </section>
@@ -1436,15 +1658,20 @@
 
   <!-- 8. المذكرات -->
   <section id="sec-notes" class="section">
-    <div class="page-banner"><div class="pb-icon">📝</div><div class="pb-text"><div class="pb-title">مذكراتي</div><div class="pb-quote">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div></div></div>
+    <div class="page-banner"><div class="pb-icon">📝</div><div class="pb-text"><div class="pb-title" data-i18n="myNotes">مذكراتي</div><div class="pb-quote">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div></div></div>
     <div class="card">
-      <div class="card-title"><span class="title-icon">📚</span> مذكراتي <span class="notes-count" id="notesCount"></span></div>
+      <div class="card-title"><span class="title-icon">📚</span> <span data-i18n="myNotes">مذكراتي</span> <span class="notes-count" id="notesCount"></span></div>
       <div id="notesList"></div>
     </div>
     <div class="card" id="noteCompose">
-      <div class="card-title"><span class="title-icon gold">✍️</span> مذكرة جديدة</div>
-      <textarea id="dailyNote" placeholder="اكتب ما حدث اليوم أو ما يخطر ببالك..."></textarea>
-      <button class="btn btn-primary btn-block" onclick="saveNote()">حفظ المذكرة</button>
+      <div class="card-title"><span class="title-icon gold">✍️</span> <span data-i18n="newNote">مذكرة جديدة</span></div>
+      <textarea id="dailyNote" data-i18n-placeholder="writeNoteFirst" placeholder="اكتب ما حدث اليوم أو ما يخطر ببالك..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="flex:1" onclick="saveNote()" data-i18n="saveNote">حفظ المذكرة</button>
+        <button class="btn btn-outline" id="voiceBtn" onclick="toggleVoiceNote()" style="flex:1">🎤 تسجيل صوتي</button>
+      </div>
+      <div id="voiceStatus" style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;text-align:center;min-height:1.2em"></div>
+      <button class="btn btn-ghost btn-sm btn-block" style="margin-top:8px" onclick="exportNotesPDF()">📄 تصدير المذكرات PDF</button>
     </div>
   </section>
 
@@ -1454,6 +1681,14 @@
       <div class="card-title"><span class="title-icon">📊</span> تقرير الأسبوع</div>
       <div class="wk-bars" id="wkBars"></div>
       <div class="wk-sum" id="wkSum"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="flex:1" onclick="shareWeekly()">📤 مشاركة</button>
+        <button class="btn btn-outline" style="flex:1" onclick="exportWeeklyPDF()">📄 تصدير PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="title-icon gold">📅</span> آخر 28 يوماً</div>
+      <div class="cal-grid" id="calGrid"></div>
     </div>
   </section>
 
@@ -1538,6 +1773,10 @@
     <input type="hidden" id="habitId">
     <label>اسم العادة</label>
     <input type="text" id="habitTitle" placeholder="مثال: قراءة 10 صفحات">
+    <label>ربط بهدف (اختياري)</label>
+    <select id="habitGoalId"><option value="">— بدون ربط —</option></select>
+    <label>هدف الأيام المتتالية (اختياري)</label>
+    <input type="number" id="habitTarget" min="0" max="365" value="0" placeholder="مثال: 30">
     <button class="btn btn-primary btn-block" onclick="saveHabit()">حفظ</button>
   </div>
 </div>
@@ -1561,15 +1800,23 @@
       <button class="btn btn-outline btn-sm" onclick="exportData()">تصدير</button>
     </div>
     <div class="settings-item"><span>موقعي لمواقيت الصلاة</span><button class="btn btn-outline btn-sm" onclick="askLocation()">تحديد</button></div>
+    <div class="settings-item">
+      <span>إشعارات مواقيت الصلاة</span>
+      <button class="btn btn-sm" id="prayerNotifBtn" onclick="togglePrayerNotif()" style="min-width:70px">إيقاف</button>
+    </div>
     <div class="settings-item"><span>نسخة احتياطية (ملف)</span><button class="btn btn-outline btn-sm" onclick="downloadBackup()">حفظ</button></div>
     <div class="settings-item"><span>استرجاع من ملف</span><button class="btn btn-outline btn-sm" onclick="document.getElementById('restoreFile').click()">اختيار</button><input type="file" id="restoreFile" accept=".json,application/json" style="display:none" onchange="restoreBackup(this)"></div>
-    <div class="sunan-heading">⏰ التذكيرات</div>
+    <div class="sunan-heading">⏰ <span data-i18n="reminders">التذكيرات</span></div>
     <div id="remList"></div>
     <div class="rem-add"><input type="time" id="remTime" value="05:30" style="max-width:120px"><input type="text" id="remLabel" placeholder="مثال: أذكار الصباح"><button class="btn btn-primary btn-sm" onclick="addReminder()" style="margin-bottom:11px">＋</button></div>
-    <p style="font-size:0.74rem;color:var(--text-muted);line-height:1.7">التذكير يظهر وأنت فاتح البرنامج (وإشعار لو سمحت به)، ولا يعمل والتطبيق مغلق.</p>
-    <p style="font-size:0.78rem;color:var(--text-muted);margin-top:18px;text-align:center;line-height:1.6">
+    <button class="btn btn-outline btn-sm btn-block" style="margin-top:8px" onclick="requestNotifPermission()" id="notifPermBtn" data-i18n="allowNotif">السماح بالإشعارات</button>
+    <p style="font-size:0.74rem;color:var(--text-muted);line-height:1.7" data-i18n="remNote">التذكير يظهر حتى لو كان التطبيق مغلقاً (بعد السماح بالإشعارات وتثبيته على الشاشة الرئيسية).</p>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-top:18px;text-align:center;line-height:1.6" data-i18n="localOnly">
       جميع البيانات محفوظة محلياً على جهازك فقط.<br>
       لا يتم إرسال أي شيء لأي خادم.
+    </p>
+    <p style="font-size:0.72rem;color:var(--gold-dark);margin-top:14px;text-align:center;font-weight:600;letter-spacing:0.3px">
+      © حقوق النشر محفوظة — Ahmed Eltabakh 2026
     </p>
   </div>
 </div>
@@ -1595,17 +1842,237 @@
   </div>
 </div>
 
+<!-- Edit Note Modal -->
+<div class="modal-overlay" id="noteEditModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="noteEditTitle">تعديل المذكرة</div>
+      <button class="close-btn" onclick="closeModal('noteEditModal')">×</button>
+    </div>
+    <input type="hidden" id="noteEditId">
+    <label id="noteEditLabel">نص المذكرة</label>
+    <textarea id="noteEditText" placeholder="اكتب المذكرة..." style="min-height:140px"></textarea>
+    <button class="btn btn-primary btn-block" onclick="saveEditedNote()" id="noteEditSaveBtn">حفظ التعديل</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const STORAGE_KEY = 'dayLifeManager_v2';
-const PRAYERS = [
+const PRAYERS_AR = [
   { id: 'fajr', name: 'الفجر', icon: '🌅' },
   { id: 'dhuhr', name: 'الظهر', icon: '☀️' },
   { id: 'asr', name: 'العصر', icon: '🌤' },
   { id: 'maghrib', name: 'المغرب', icon: '🌇' },
   { id: 'isha', name: 'العشاء', icon: '🌙' }
 ];
+const PRAYERS_EN = [
+  { id: 'fajr', name: 'Fajr', icon: '🌅' },
+  { id: 'dhuhr', name: 'Dhuhr', icon: '☀️' },
+  { id: 'asr', name: 'Asr', icon: '🌤' },
+  { id: 'maghrib', name: 'Maghrib', icon: '🌇' },
+  { id: 'isha', name: 'Isha', icon: '🌙' }
+];
+let PRAYERS = PRAYERS_AR;
+
+/* ══ Language System ══ */
+let LANG = localStorage.getItem('dayLifeLang') || 'ar';
+const TR = {
+  ar: {
+    appTitle: 'إدارة اليوم', settings: 'الإعدادات', resetDay: 'إعادة ضبط اليوم',
+    nextPrayer: 'الصلاة القادمة', tapLocation: '📍 اضغط لتحديد موقعك', harvest: 'حصاد يومك',
+    achievedToday: 'أنجزت اليوم', startDay: 'ابدأ يومك باسم الله', details: 'تفاصيل الإنجاز',
+    doneSoFar: 'أنجزته حتى الآن', duaToday: 'دعاء اليوم', prayersToday: 'صلاة اليوم',
+    todayTasks: 'مهام اليوم', addDailyTask: '＋ إضافة مهمة يومية', moodToday: 'المزاج اليوم',
+    worship: 'العبادة', house: 'البيت', goals: 'أهداف', habits: 'عادات', notes: 'مذكرات', report: 'تقرير',
+    today: 'اليوم', myNotes: 'مذكراتي', newNote: 'مذكرة جديدة', saveNote: 'حفظ المذكرة',
+    writeNoteFirst: 'اكتب المذكرة أولاً', noteSaved: 'تم حفظ المذكرة', editNote: 'تعديل المذكرة',
+    noteText: 'نص المذكرة', saveEdit: 'حفظ التعديل', noteUpdated: 'تم تحديث المذكرة',
+    deleteNoteConfirm: 'حذف هذه المذكرة؟', deleted: 'تم الحذف', noNotesYet: 'لا توجد مذكرات بعد، اكتب أولى مذكراتك بالأسفل',
+    edit: 'تعديل', delete: 'حذف', language: 'اللغة', arabic: 'العربية', english: 'English',
+    reminders: 'التذكيرات', remNote: 'التذكير يظهر حتى لو كان التطبيق مغلقاً (بعد السماح بالإشعارات وتثبيته على الشاشة الرئيسية).',
+    allowNotif: 'السماح بالإشعارات', notifAllowed: 'تم السماح بالإشعارات', notifDenied: 'تم رفض الإشعارات',
+    morningAdhkar: 'أذكار الصباح', eveningAdhkar: 'أذكار المساء', sleepAdhkar: 'أذكار النوم',
+    quranPages: 'عدد الصفحات المقروءة اليوم', save: 'حفظ', thisMonth: 'إجمالي هذا الشهر', page: 'صفحة',
+    dhikrCounter: 'عداد الأذكار', resetCounter: 'تصفير العداد', counterReset: 'تم تصفير العداد',
+    addTask: 'إضافة مهمة', taskTitle: 'عنوان المهمة', period: 'الفترة', daily: 'يومي', weekly: 'أسبوعي', monthly: 'شهري',
+    saved: 'تم الحفظ', writeTask: 'اكتب عنوان المهمة', deleteTaskConfirm: 'حذف هذه المهمة؟',
+    noDailyTasks: 'لا توجد مهام يومية بعد', noHomeTasks: 'لا توجد مهام في هذه الفترة',
+    addGoal: 'هدف جديد', goal: 'الهدف', progress: 'التقدم الحالي (%)', notesOpt: 'ملاحظات',
+    writeGoal: 'اكتب الهدف', deleteGoalConfirm: 'حذف هذا الهدف؟', noGoals: 'لم تضف أهدافاً بعد',
+    newHabit: 'عادة جديدة', habitName: 'اسم العادة', writeHabit: 'اكتب اسم العادة', habitAdded: 'تمت إضافة العادة',
+    deleteHabitConfirm: 'حذف هذه العادة؟', noHabits: 'لا توجد عادات بعد',
+    moodSaved: 'تم تسجيل المزاج', weeklyReport: 'تقرير الأسبوع', study: 'المذاكرة',
+    backToToday: '↩ العودة إلى اليوم', enterPin: 'أدخل الرمز للدخول إلى المذاكرة', enter: 'دخول', cancel: 'إلغاء',
+    wrongPin: 'الرمز غير صحيح', yesDelete: 'نعم، احذف', confirmReset: 'هل تريد إعادة ضبط بيانات اليوم الحالي فقط؟',
+    yesReset: 'نعم، أعد الضبط', dayReset: 'تم إعادة ضبط اليوم', clearAllWarn: 'تحذير: سيتم حذف كل البيانات نهائياً. هل أنت متأكد؟',
+    finalConfirm: 'تأكيد نهائي: مسح كل شيء؟', yesClear: 'نعم، امسح الكل', continue: 'متابعة',
+    dataCopied: 'تم نسخ البيانات', locUnavailable: 'الموقع غير متاح على جهازك', locating: 'جارٍ تحديد موقعك...',
+    locSet: 'تم تحديد موقعك', locFail: 'تعذّر تحديد الموقع، تأكد من السماح به',
+    after: 'بعد', h: 'س', m: 'د', prayerOf: 'صلاة ', locationPrefix: '📍 ',
+    changeLoc: ' • اضغط لتغيير الموقع', myLocation: 'موقعي الحالي', cairo: 'القاهرة',
+    noAchievements: 'لم تسجّل إنجازاً بعد، وأول الغيث قطرة 🌧',
+    msg0: 'ابدأ يومك باسم الله', msg40: 'بداية مباركة، واصل بإذن الله', msg75: 'بارك الله في سعيك، أنت في منتصف الطريق',
+    msg99: 'ما شاء الله، أوشكت على الإتمام', msg100: 'تقبّل الله منك، يوم مبارك ✨',
+    streakPrayers: ' يوم متتالي بالصلوات الخمس',
+    houseAffairs: 'شؤون البيت', myGoals: 'أهدافي', myHabits: 'عاداتي', trackHabits: 'تتبع العادات',
+    houseDaily: 'مهام البيت اليومية', houseWeekly: 'مهام البيت الأسبوعية', houseMonthly: 'مهام البيت الشهرية',
+    addHomeTask: '＋ إضافة مهمة', addNewGoal: '＋ هدف جديد', addNewHabit: '＋ عادة جديدة',
+    sunanRawatib: 'السنن الرواتب', witrNawafil: 'الوتر والنوافل', khatma: 'ختمة القرآن', fasting: 'الصيام',
+    sadaqa: 'الصدقات', quran: 'القرآن الكريم', adhkar: 'الأذكار',
+    writeSadaqa: 'اكتب وصف الصدقة', sadaqaAccepted: 'تقبّل الله منك', thisMonthSadaqa: 'هذا الشهر',
+    startKhatma: 'ابدأ الختمة', cancelKhatma: 'إلغاء الختمة', newKhatma: 'ختمة جديدة',
+    fastedToday: 'صمتُ اليوم', daysFasted: 'أيام صيامك هذا الشهر',
+    settingsResetDay: 'إعادة ضبط بيانات اليوم فقط', settingsClearAll: 'مسح كل البيانات نهائياً',
+    settingsExport: 'تصدير البيانات (نسخ)', settingsLoc: 'موقعي لمواقيت الصلاة', settingsBackup: 'نسخة احتياطية (ملف)',
+    settingsRestore: 'استرجاع من ملف', execute: 'تنفيذ', clearAll: 'مسح الكل', export: 'تصدير', set: 'تحديد',
+    saveFile: 'حفظ', choose: 'اختيار', localOnly: 'جميع البيانات محفوظة محلياً على جهازك فقط.\nلا يتم إرسال أي شيء لأي خادم.',
+    addReminder: '＋', writeTimeLabel: 'اكتب الوقت والعنوان', reminderAdded: 'تمت إضافة التذكير',
+    noReminders: 'لا توجد تذكيرات', backupSaved: 'تم حفظ النسخة الاحتياطية', invalidFile: 'الملف غير صالح',
+    restoreConfirm: 'سيتم استبدال بياناتك الحالية بالنسخة المختارة. متابعة؟', yesRestore: 'نعم، استرجع',
+    subjects: 'المواد', studyGoals: 'أهدافي', timer: 'المؤقّت', studyNotes: 'ملحوظات', studyReport: 'التقرير',
+    newSubject: 'مادة جديدة', subjectName: 'اسم المادة (مثال: الفيزياء)', examDate: 'موعد الامتحان (اختياري)',
+    addSubject: '＋ إضافة المادة', subjectAdded: 'تمت إضافة المادة', deleteSubjectConfirm: 'حذف المادة بكل دروسها؟',
+    noSubjects: 'أضف موادك الدراسية لتبدأ', newGoalSt: 'هدف جديد', writeGoalSt: 'اكتب الهدف',
+    focusSession: 'جلسة تركيز', start: 'ابدأ', pause: 'إيقاف مؤقت', resume: 'متابعة', reset: 'إعادة',
+    studyToday: 'مذاكرة اليوم', target: 'الهدف', min: 'د', logManual: 'تسجيل جلسة يدوياً (دقائق)',
+    writeMinutes: 'اكتب عدد الدقائق', logged: 'تم تسجيل', tipPrefix: '💡 ',
+    noStudyNotes: 'لا توجد ملحوظات بعد', saveStudyNote: 'حفظ الملحوظة', noteSavedSt: 'تم الحفظ',
+    deleteStudyNoteConfirm: 'حذف هذه الملحوظة؟', last7days: 'آخر 7 أيام', summary: 'ملخص',
+    goalsDone: 'الأهداف المحققة', lessonsDone: 'الدروس المنجزة', nextExam: 'أقرب امتحان', hoursPerSubject: 'ساعات كل مادة',
+    focusTime: '📖 وقت التركيز', breakTime: '☕ وقت الاستراحة', goodJob: 'أحسنت! أتممت ', rest5: ' دقيقة 🎉 استرح 5 دقائق',
+    breakOver: 'انتهت الاستراحة، هيا نكمل',
+    sunanTitle: 'سنن الصلاة', rakatOf12: 'من 12 ركعة', hadithRawatib: '«مَا مِنْ عَبْدٍ مُسْلِمٍ يُصَلِّي لِلَّهِ كُلَّ يَوْمٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً تَطَوُّعًا غَيْرَ فَرِيضَةٍ إِلَّا بَنَى اللَّهُ لَهُ بَيْتًا فِي الْجَنَّةِ»',
+    hadithSource: 'رواه مسلم',
+    WD: ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
+  },
+  en: {
+    appTitle: 'Day Manager', settings: 'Settings', resetDay: 'Reset Today',
+    nextPrayer: 'Next Prayer', tapLocation: '📍 Tap to set your location', harvest: "Today's Harvest",
+    achievedToday: 'You achieved today', startDay: 'Start your day in the name of Allah', details: 'Achievement Details',
+    doneSoFar: 'Completed so far', duaToday: "Today's Dua", prayersToday: "Today's Prayers",
+    todayTasks: "Today's Tasks", addDailyTask: '＋ Add daily task', moodToday: "Today's Mood",
+    worship: 'Worship', house: 'Home', goals: 'Goals', habits: 'Habits', notes: 'Notes', report: 'Report',
+    today: 'Today', myNotes: 'My Notes', newNote: 'New Note', saveNote: 'Save Note',
+    writeNoteFirst: 'Write the note first', noteSaved: 'Note saved', editNote: 'Edit Note',
+    noteText: 'Note text', saveEdit: 'Save changes', noteUpdated: 'Note updated',
+    deleteNoteConfirm: 'Delete this note?', deleted: 'Deleted', noNotesYet: 'No notes yet. Write your first note below',
+    edit: 'Edit', delete: 'Delete', language: 'Language', arabic: 'العربية', english: 'English',
+    reminders: 'Reminders', remNote: 'Reminders appear even when the app is closed (after allowing notifications and adding to home screen).',
+    allowNotif: 'Allow Notifications', notifAllowed: 'Notifications allowed', notifDenied: 'Notifications denied',
+    morningAdhkar: 'Morning Adhkar', eveningAdhkar: 'Evening Adhkar', sleepAdhkar: 'Sleep Adhkar',
+    quranPages: 'Pages read today', save: 'Save', thisMonth: 'This month total', page: 'pages',
+    dhikrCounter: 'Dhikr Counter', resetCounter: 'Reset counter', counterReset: 'Counter reset',
+    addTask: 'Add Task', taskTitle: 'Task title', period: 'Period', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly',
+    saved: 'Saved', writeTask: 'Write the task title', deleteTaskConfirm: 'Delete this task?',
+    noDailyTasks: 'No daily tasks yet', noHomeTasks: 'No tasks in this period',
+    addGoal: 'New Goal', goal: 'Goal', progress: 'Current progress (%)', notesOpt: 'Notes',
+    writeGoal: 'Write the goal', deleteGoalConfirm: 'Delete this goal?', noGoals: 'No goals yet',
+    newHabit: 'New Habit', habitName: 'Habit name', writeHabit: 'Write the habit name', habitAdded: 'Habit added',
+    deleteHabitConfirm: 'Delete this habit?', noHabits: 'No habits yet',
+    moodSaved: 'Mood recorded', weeklyReport: 'Weekly Report', study: 'Study',
+    backToToday: '↩ Back to Today', enterPin: 'Enter PIN to access Study', enter: 'Enter', cancel: 'Cancel',
+    wrongPin: 'Incorrect PIN', yesDelete: 'Yes, delete', confirmReset: 'Reset today\'s data only?',
+    yesReset: 'Yes, reset', dayReset: 'Today reset', clearAllWarn: 'Warning: All data will be permanently deleted. Are you sure?',
+    finalConfirm: 'Final confirmation: Clear everything?', yesClear: 'Yes, clear all', continue: 'Continue',
+    dataCopied: 'Data copied', locUnavailable: 'Location not available on your device', locating: 'Getting your location...',
+    locSet: 'Location set', locFail: 'Could not get location, please allow access',
+    after: 'in', h: 'h', m: 'm', prayerOf: '', locationPrefix: '📍 ',
+    changeLoc: ' • Tap to change', myLocation: 'My current location', cairo: 'Cairo',
+    noAchievements: 'No achievements yet. Every journey begins with a step 🌧',
+    msg0: 'Start your day in the name of Allah', msg40: 'Blessed start, keep going', msg75: 'May Allah bless your effort, you\'re halfway',
+    msg99: 'MashaAllah, almost done', msg100: 'May Allah accept it from you ✨',
+    streakPrayers: ' consecutive days of 5 prayers',
+    houseAffairs: 'Home Affairs', myGoals: 'My Goals', myHabits: 'My Habits', trackHabits: 'Track Habits',
+    houseDaily: 'Daily home tasks', houseWeekly: 'Weekly home tasks', houseMonthly: 'Monthly home tasks',
+    addHomeTask: '＋ Add task', addNewGoal: '＋ New goal', addNewHabit: '＋ New habit',
+    sunanRawatib: 'Rawatib Sunnah', witrNawafil: 'Witr & Nawafil', khatma: 'Quran Khatma', fasting: 'Fasting',
+    sadaqa: 'Charity', quran: 'The Holy Quran', adhkar: 'Adhkar',
+    writeSadaqa: 'Write charity description', sadaqaAccepted: 'May Allah accept it', thisMonthSadaqa: 'This month',
+    startKhatma: 'Start Khatma', cancelKhatma: 'Cancel Khatma', newKhatma: 'New Khatma',
+    fastedToday: 'I fasted today', daysFasted: 'Days fasted this month',
+    settingsResetDay: 'Reset today\'s data only', settingsClearAll: 'Clear all data permanently',
+    settingsExport: 'Export data (copy)', settingsLoc: 'My location for prayer times', settingsBackup: 'Backup (file)',
+    settingsRestore: 'Restore from file', execute: 'Execute', clearAll: 'Clear all', export: 'Export', set: 'Set',
+    saveFile: 'Save', choose: 'Choose', localOnly: 'All data is stored locally on your device only.\nNothing is sent to any server.',
+    addReminder: '＋', writeTimeLabel: 'Enter time and label', reminderAdded: 'Reminder added',
+    noReminders: 'No reminders', backupSaved: 'Backup saved', invalidFile: 'Invalid file',
+    restoreConfirm: 'Current data will be replaced with the selected backup. Continue?', yesRestore: 'Yes, restore',
+    subjects: 'Subjects', studyGoals: 'My Goals', timer: 'Timer', studyNotes: 'Notes', studyReport: 'Report',
+    newSubject: 'New Subject', subjectName: 'Subject name (e.g. Physics)', examDate: 'Exam date (optional)',
+    addSubject: '＋ Add subject', subjectAdded: 'Subject added', deleteSubjectConfirm: 'Delete subject with all lessons?',
+    noSubjects: 'Add your subjects to start', newGoalSt: 'New Goal', writeGoalSt: 'Write the goal',
+    focusSession: 'Focus Session', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset',
+    studyToday: 'Study today', target: 'Target', min: 'min', logManual: 'Log session manually (minutes)',
+    writeMinutes: 'Enter minutes', logged: 'Logged', tipPrefix: '💡 ',
+    noStudyNotes: 'No notes yet', saveStudyNote: 'Save note', noteSavedSt: 'Saved',
+    deleteStudyNoteConfirm: 'Delete this note?', last7days: 'Last 7 days', summary: 'Summary',
+    goalsDone: 'Goals completed', lessonsDone: 'Lessons completed', nextExam: 'Next exam', hoursPerSubject: 'Hours per subject',
+    focusTime: '📖 Focus time', breakTime: '☕ Break time', goodJob: 'Well done! You completed ', rest5: ' min 🎉 Take a 5-min break',
+    breakOver: 'Break over, let\'s continue',
+    sunanTitle: 'Prayer Sunnah', rakatOf12: 'of 12 rak\'ahs', hadithRawatib: '"Whoever prays twelve rak\'ahs in a day and night, a house will be built for him in Paradise."',
+    hadithSource: 'Muslim',
+    WD: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  }
+};
+function t(key) { return (TR[LANG] && TR[LANG][key]) || (TR.ar[key]) || key; }
+function toggleLang() {
+  LANG = LANG === 'ar' ? 'en' : 'ar';
+  localStorage.setItem('dayLifeLang', LANG);
+  applyLanguage();
+  showToast(LANG === 'ar' ? 'تم التبديل إلى العربية' : 'Switched to English');
+}
+function applyLanguage() {
+  PRAYERS = LANG === 'en' ? PRAYERS_EN : PRAYERS_AR;
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.title = LANG === 'ar' ? 'إدارة اليوم والحياة' : 'Day & Life Manager';
+  // Header
+  const titleEl = document.getElementById('titleLock');
+  if (titleEl) titleEl.textContent = t('appTitle');
+  // Bottom nav
+  const navMap = {
+    'sec-ibada': t('worship'), 'sec-home-tasks': t('house'), 'sec-goals': t('goals'),
+    'sec-home': t('today'), 'sec-habits': t('habits'), 'sec-notes': t('notes'), 'sec-report': t('report')
+  };
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    const sec = btn.dataset.sec;
+    if (!sec) return;
+    const icon = btn.querySelector('.nav-icon');
+    const label = navMap[sec];
+    if (btn.classList.contains('nav-center')) {
+      const lab = btn.querySelector('.nav-center-label');
+      if (lab) lab.textContent = t('today');
+    } else if (label) {
+      btn.innerHTML = (icon ? icon.outerHTML : '') + label;
+    }
+  });
+  // Page banners & static labels via data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (k) el.textContent = t(k);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const k = el.getAttribute('data-i18n-placeholder');
+    if (k) el.placeholder = t(k);
+  });
+  // Re-render current section
+  const active = document.querySelector('.section.active');
+  if (active) {
+    const id = active.id;
+    if (id === 'sec-home') renderHome();
+    else if (id === 'sec-ibada') renderIbada();
+    else if (id === 'sec-home-tasks') renderHomeTasks();
+    else if (id === 'sec-goals') renderGoals();
+    else if (id === 'sec-habits') renderHabits();
+    else if (id === 'sec-notes') renderNotes();
+    else if (id === 'sec-report') renderWeekly();
+    else if (id === 'sec-study') renderStudy();
+  }
+  updateDates();
+  updatePrayerTimes();
+}
 
 function todayKey() {
   const d = new Date();
@@ -1720,7 +2187,10 @@ function askConfirm(msg, onYes, yesLabel) {
 
 function openModal(id) {
   const el = document.getElementById(id);
-  if (id === 'settingsModal') renderReminders();
+  if (id === 'settingsModal') {
+    renderReminders();
+    updatePrayerNotifBtn();
+  }
   el.classList.add('show');
   requestAnimationFrame(() => el.style.opacity = '1');
 }
@@ -1731,11 +2201,13 @@ function closeModal(id) {
 
 function updateDates() {
   const now = new Date();
-  document.getElementById('gregDate').textContent = now.toLocaleDateString('ar-EG', {
+  const locale = LANG === 'en' ? 'en-US' : 'ar-EG';
+  document.getElementById('gregDate').textContent = now.toLocaleDateString(locale, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
   try {
-    document.getElementById('hijriDate').textContent = now.toLocaleDateString('ar-SA-u-ca-islamic', {
+    document.getElementById('hijriDate').textContent = now.toLocaleDateString(
+      LANG === 'en' ? 'en-US-u-ca-islamic' : 'ar-SA-u-ca-islamic', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
   } catch(e) { document.getElementById('hijriDate').textContent = ''; }
@@ -1796,7 +2268,8 @@ function toggleSunan(id) {
 
 function renderSunan() {
   const raw = document.getElementById('sunanRawatib');
-  if (!raw) return;
+  const naw = document.getElementById('sunanNawafil');
+  if (!raw || !naw) return;
   const st = sunanState();
   const row = (x) => `
     <div class="check-item ${st[x.id] ? 'done' : ''}" onclick="toggleSunan('${x.id}')">
@@ -1805,10 +2278,12 @@ function renderSunan() {
       ${x.r ? `<span class="rak-badge">${x.r} ${x.r === 2 ? 'ركعتان' : 'ركعات'}</span>` : `<span class="rak-badge soft">${x.icon}</span>`}
     </div>`;
   raw.innerHTML = SUNAN_RAWATIB.map(row).join('');
-  document.getElementById('sunanNawafil').innerHTML = SUNAN_NAWAFIL.map(row).join('');
+  naw.innerHTML = SUNAN_NAWAFIL.map(row).join('');
   const done = SUNAN_RAWATIB.reduce((a, x) => a + (st[x.id] ? x.r : 0), 0);
-  document.getElementById('rakDone').textContent = done;
-  document.getElementById('rakProgress').style.width = (done / 12 * 100) + '%';
+  const rakDone = document.getElementById('rakDone');
+  const rakProg = document.getElementById('rakProgress');
+  if (rakDone) rakDone.textContent = done;
+  if (rakProg) rakProg.style.width = (done / 12 * 100) + '%';
 }
 
 function renderAdhkar() {
@@ -2018,39 +2493,81 @@ function deleteGoal(id) {
 
 function renderGoals() {
   const list = document.getElementById('goalsList');
+  if (!list) return;
   if (!DATA.goals.length) {
     list.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div><p>لم تضف أهدافاً بعد</p></div>';
     return;
   }
-  list.innerHTML = DATA.goals.map(g => `
+  list.innerHTML = DATA.goals.map(g => {
+    const linked = (DATA.habits || []).filter(h => h.goalId === g.id);
+    const habitsLine = linked.length
+      ? '<div class="list-item-sub">🔥 ' + linked.map(h => escapeHtml(h.title) + ' (' + (h.streak || 0) + (h.target ? '/' + h.target : '') + ')').join(' • ') + '</div>'
+      : '';
+    return `
     <div class="list-item">
       <div class="list-item-content">
         <div class="list-item-title">${escapeHtml(g.title)}</div>
         <div class="progress-bar"><div class="progress-fill" style="width:${g.progress||0}%"></div></div>
         <div class="list-item-sub">${g.progress||0}% ${g.notes ? '• ' + escapeHtml(g.notes) : ''}</div>
+        ${habitsLine}
       </div>
       <div class="list-actions">
         <button class="action-btn edit" onclick="editGoal('${g.id}')">✏️</button>
         <button class="action-btn delete" onclick="deleteGoal('${g.id}')">🗑</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
+function fillHabitGoalSelect(selected) {
+  const sel = document.getElementById('habitGoalId');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— بدون ربط —</option>' +
+    (DATA.goals || []).map(g => '<option value="' + g.id + '"' + (g.id === selected ? ' selected' : '') + '>' + escapeHtml(g.title) + '</option>').join('');
+}
 function openAddHabit() {
   document.getElementById('habitId').value = '';
   document.getElementById('habitTitle').value = '';
+  document.getElementById('habitTarget').value = '0';
+  fillHabitGoalSelect('');
   openModal('habitModal');
 }
 
 function saveHabit() {
   const title = document.getElementById('habitTitle').value.trim();
   if (!title) { showToast('اكتب اسم العادة'); return; }
-  DATA.habits.push({ id: Date.now().toString(), title, streak: 0, lastDone: '', doneDates: [] });
+  const goalId = (document.getElementById('habitGoalId') || {}).value || '';
+  const target = Math.max(0, parseInt((document.getElementById('habitTarget') || {}).value) || 0);
+  DATA.habits.push({
+    id: Date.now().toString(),
+    title,
+    streak: 0,
+    lastDone: '',
+    doneDates: [],
+    goalId: goalId || null,
+    target: target || 0
+  });
+  // bump linked goal progress slightly if target days set
+  if (goalId) syncGoalFromHabits(goalId);
   saveData();
   closeModal('habitModal');
   renderHabits();
+  renderGoals();
   showToast('تمت إضافة العادة');
+}
+
+function syncGoalFromHabits(goalId) {
+  const g = (DATA.goals || []).find(x => x.id === goalId);
+  if (!g) return;
+  const linked = (DATA.habits || []).filter(h => h.goalId === goalId);
+  if (!linked.length) return;
+  // progress = average of (streak/target or done this week) capped 100
+  let sum = 0;
+  linked.forEach(h => {
+    if (h.target > 0) sum += Math.min(100, Math.round(((h.streak || 0) / h.target) * 100));
+    else sum += Math.min(100, (h.streak || 0) * 5);
+  });
+  g.progress = Math.min(100, Math.round(sum / linked.length));
 }
 
 function toggleHabit(id) {
@@ -2070,21 +2587,29 @@ function toggleHabit(id) {
     else h.streak = 1;
     h.lastDone = key;
   }
+  if (h.goalId) syncGoalFromHabits(h.goalId);
   saveData();
   renderHabits();
+  renderBadges();
+  try { renderGoals(); } catch (e) {}
 }
 
 function deleteHabit(id) {
   askConfirm('حذف هذه العادة؟', () => {
+    const h = DATA.habits.find(x => x.id === id);
+    const gid = h && h.goalId;
     DATA.habits = DATA.habits.filter(x => x.id !== id);
+    if (gid) syncGoalFromHabits(gid);
     saveData();
     renderHabits();
+    try { renderGoals(); } catch (e) {}
     showToast('تم الحذف');
   });
 }
 
 function renderHabits() {
   const list = document.getElementById('habitsList');
+  if (!list) return;
   if (!DATA.habits.length) {
     list.innerHTML = '<div class="empty"><div class="empty-icon">🔥</div><p>لا توجد عادات بعد</p></div>';
     return;
@@ -2092,12 +2617,16 @@ function renderHabits() {
   const key = todayKey();
   list.innerHTML = DATA.habits.map(h => {
     const done = h.doneDates && h.doneDates.includes(key);
+    const g = h.goalId ? (DATA.goals || []).find(x => x.id === h.goalId) : null;
+    const targetInfo = h.target ? ' / ' + h.target : '';
+    const linkInfo = g ? '<small>🎯 ' + escapeHtml(g.title) + '</small>' : '';
     return `
     <div class="check-item ${done ? 'done' : ''}" onclick="toggleHabit('${h.id}')">
       <div class="checkbox"></div>
       <div class="check-label">
         ${escapeHtml(h.title)}
-        <span class="streak">🔥 ${h.streak || 0}</span>
+        <span class="streak">🔥 ${h.streak || 0}${targetInfo}</span>
+        ${linkInfo}
       </div>
       <div class="list-actions" onclick="event.stopPropagation()">
         <button class="action-btn delete" onclick="deleteHabit('${h.id}')">🗑</button>
@@ -2117,28 +2646,54 @@ function setMood(n) {
 function saveNote() {
   const ta = document.getElementById('dailyNote');
   const text = ta.value.trim();
-  if (!text) { showToast('اكتب المذكرة أولاً'); return; }
+  if (!text) { showToast(t('writeNoteFirst')); return; }
   const now = new Date();
   DATA.notesList.push({
     id: Date.now().toString(),
     date: todayKey(),
-    time: now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }),
+    time: now.toLocaleTimeString(LANG === 'en' ? 'en-US' : 'ar-EG', { hour: 'numeric', minute: '2-digit' }),
     text
   });
   ta.value = '';
   saveData();
   renderNotes();
-  showToast('تم حفظ المذكرة');
+  showToast(t('noteSaved'));
   const items = document.querySelectorAll('#notesList .note-item');
   if (items.length) items[items.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function editNote(id) {
+  const n = (DATA.notesList || []).find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('noteEditId').value = n.id;
+  document.getElementById('noteEditText').value = n.text;
+  document.getElementById('noteEditTitle').textContent = t('editNote');
+  document.getElementById('noteEditLabel').textContent = t('noteText');
+  document.getElementById('noteEditSaveBtn').textContent = t('saveEdit');
+  openModal('noteEditModal');
+}
+
+function saveEditedNote() {
+  const id = document.getElementById('noteEditId').value;
+  const text = document.getElementById('noteEditText').value.trim();
+  if (!text) { showToast(t('writeNoteFirst')); return; }
+  const n = (DATA.notesList || []).find(x => x.id === id);
+  if (n) {
+    n.text = text;
+    n.edited = true;
+    saveData();
+    closeModal('noteEditModal');
+    renderNotes();
+    showToast(t('noteUpdated'));
+  }
+}
+
 function deleteNote(id) {
-  askConfirm('حذف هذه المذكرة؟', () => {
+  askConfirm(t('deleteNoteConfirm'), () => {
     DATA.notesList = DATA.notesList.filter(n => n.id !== id);
     saveData();
     renderNotes();
-    showToast('تم الحذف');
+    showToast(t('deleted'));
   });
 }
 
@@ -2147,20 +2702,29 @@ function renderNotes() {
   const cnt = document.getElementById('notesCount');
   if (!list) return;
   const arr = DATA.notesList || [];
-  cnt.textContent = arr.length ? arr.length : '';
+  if (cnt) cnt.textContent = arr.length ? arr.length : '';
   if (!arr.length) {
-    list.innerHTML = '<div class="empty" style="padding:24px 10px"><div class="empty-icon">✦</div><p>لا توجد مذكرات بعد، اكتب أولى مذكراتك بالأسفل</p></div>';
+    list.innerHTML = `<div class="empty" style="padding:24px 10px"><div class="empty-icon">✦</div><p>${t('noNotesYet')}</p></div>`;
     return;
   }
   list.innerHTML = arr.map(n => {
     let d = n.date;
-    try { d = new Date(n.date + 'T00:00:00').toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+    try {
+      d = new Date(n.date + 'T00:00:00').toLocaleDateString(LANG === 'en' ? 'en-US' : 'ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+    } catch (e) {}
+    const body = n.audio
+      ? `<audio controls src="${n.audio}" style="width:100%;margin-top:6px;max-height:40px"></audio>`
+      : `<div class="note-text">${escapeHtml(n.text)}</div>`;
+    const editBtn = n.audio ? '' : `<button class="action-btn edit" onclick="editNote('${n.id}')" aria-label="${t('edit')}">✏️</button>`;
     return `<div class="note-item">
       <div class="note-head">
-        <span class="note-date">${d}${n.time ? ' • ' + n.time : ''}</span>
-        <button class="action-btn delete" onclick="deleteNote('${n.id}')" aria-label="حذف">🗑</button>
+        <span class="note-date">${d}${n.time ? ' • ' + n.time : ''}${n.edited ? ' ✎' : ''}${n.audio ? ' 🎤' : ''}</span>
+        <div class="list-actions">
+          ${editBtn}
+          <button class="action-btn delete" onclick="deleteNote('${n.id}')" aria-label="${t('delete')}">🗑</button>
+        </div>
       </div>
-      <div class="note-text">${escapeHtml(n.text)}</div>
+      ${body}
     </div>`;
   }).join('');
 }
@@ -2168,11 +2732,18 @@ function renderNotes() {
 /* ══ Helpers ══ */
 function keyOf(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function hijri(d) {
-  const f = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d || new Date());
-  const g = t => parseInt(f.find(x => x.type === t).value, 10);
-  return { d: g('day'), m: g('month'), y: g('year') };
+  try {
+    const f = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d || new Date());
+    const g = (type) => {
+      const part = f.find(x => x.type === type);
+      return part ? parseInt(part.value, 10) : 0;
+    };
+    return { d: g('day'), m: g('month'), y: g('year') };
+  } catch (e) {
+    return { d: 1, m: 1, y: 1447 };
+  }
 }
-const WD = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+function getWD() { return (TR[LANG] && TR[LANG].WD) || TR.ar.WD; }
 
 /* ══ 1) Prayer times (Egyptian method, offline) ══ */
 let PT = {}, PT_DATES = {};
@@ -2194,34 +2765,131 @@ function calcPrayer(lat, lng, date) {
 function fmtT(h) {
   h = ((h % 24) + 24) % 24; let H = Math.floor(h), M = Math.round((h - H) * 60);
   if (M === 60) { M = 0; H = (H + 1) % 24; }
+  if (LANG === 'en') {
+    const ampm = H < 12 ? 'AM' : 'PM';
+    return (((H + 11) % 12) + 1) + ':' + String(M).padStart(2, '0') + ' ' + ampm;
+  }
   return (((H + 11) % 12) + 1) + ':' + String(M).padStart(2, '0') + ' ' + (H < 12 ? 'ص' : 'م');
 }
-function getLoc() { return (DATA.settings && DATA.settings.loc) || { lat: 30.0444, lng: 31.2357, name: 'القاهرة' }; }
+function getLoc() {
+  const defName = t('cairo');
+  return (DATA.settings && DATA.settings.loc) || { lat: 30.0444, lng: 31.2357, name: defName };
+}
 function updatePrayerTimes() {
   const loc = getLoc(), now = new Date(), t = calcPrayer(loc.lat, loc.lng, now);
   const toDate = (h, base) => new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, Math.round(h * 60));
   PT = {}; PRAYERS.forEach(p => PT[p.id] = fmtT(t[p.id]));
+  // store raw hours for scheduling
+  window._prayerRaw = {};
+  PRAYERS.forEach(p => { window._prayerRaw[p.id] = t[p.id]; });
   let next = null;
   for (const p of PRAYERS) { const dt = toDate(t[p.id], now); if (dt > now) { next = { p, dt }; break; } }
   if (!next) { const tm = new Date(now.getTime() + 864e5), t2 = calcPrayer(loc.lat, loc.lng, tm); next = { p: PRAYERS[0], dt: toDate(t2.fajr, tm) }; }
   const mins = Math.max(0, Math.round((next.dt - now) / 60000)), hh = Math.floor(mins / 60), mm = mins % 60;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('npName', 'صلاة ' + next.p.name); set('npTime', PT[next.p.id] && fmtT(next.dt.getHours() + next.dt.getMinutes() / 60));
-  set('npLeft', 'بعد ' + (hh ? hh + ' س ' : '') + mm + ' د');
-  set('npCity', '📍 ' + loc.name + ' • اضغط لتغيير الموقع');
+  set('npName', t('prayerOf') + next.p.name);
+  set('npTime', PT[next.p.id] && fmtT(next.dt.getHours() + next.dt.getMinutes() / 60));
+  set('npLeft', t('after') + ' ' + (hh ? hh + ' ' + t('h') + ' ' : '') + mm + ' ' + t('m'));
+  const locName = (loc.name === 'موقعي الحالي' || loc.name === 'My current location') ? t('myLocation') : loc.name;
+  set('npCity', t('locationPrefix') + locName + t('changeLoc'));
   document.querySelectorAll('.prayer-item').forEach((el, i) => {
     let tm = el.querySelector('.ptime'); if (!tm) { tm = document.createElement('div'); tm.className = 'ptime'; el.appendChild(tm); }
     tm.textContent = PT[PRAYERS[i % 5].id] || '';
   });
+  schedulePrayerNotifications();
 }
 function askLocation() {
-  if (!navigator.geolocation) { showToast('الموقع غير متاح على جهازك'); return; }
-  showToast('جارٍ تحديد موقعك...');
+  if (!navigator.geolocation) { showToast(t('locUnavailable')); return; }
+  showToast(t('locating'));
   navigator.geolocation.getCurrentPosition(pos => {
-    DATA.settings.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, name: 'موقعي الحالي' };
+    DATA.settings.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, name: t('myLocation') };
     saveData(); updatePrayerTimes(); renderPrayers('prayerGrid'); renderPrayers('prayerGrid2'); updatePrayerTimes();
-    showToast('تم تحديد موقعك');
-  }, () => showToast('تعذّر تحديد الموقع، تأكد من السماح به'), { timeout: 10000 });
+    showToast(t('locSet'));
+  }, () => showToast(t('locFail')), { timeout: 10000 });
+}
+
+/* ══ Prayer Time Notifications ══ */
+let prayerTimers = [];
+function isPrayerNotifOn() {
+  return !!(DATA.settings && DATA.settings.prayerNotif);
+}
+function updatePrayerNotifBtn() {
+  const btn = document.getElementById('prayerNotifBtn');
+  if (!btn) return;
+  const on = isPrayerNotifOn();
+  btn.textContent = on ? (LANG === 'en' ? 'ON' : 'مفعّل') : (LANG === 'en' ? 'OFF' : 'إيقاف');
+  btn.className = 'btn btn-sm ' + (on ? 'btn-primary' : 'btn-outline');
+}
+function togglePrayerNotif() {
+  DATA.settings = DATA.settings || {};
+  if (!isPrayerNotifOn()) {
+    // turning ON — need notification permission
+    if (!('Notification' in window)) {
+      showToast(LANG === 'ar' ? 'الإشعارات غير مدعومة على جهازك' : 'Notifications not supported');
+      return;
+    }
+    const enable = () => {
+      DATA.settings.prayerNotif = true;
+      saveData();
+      updatePrayerNotifBtn();
+      schedulePrayerNotifications();
+      showToast(LANG === 'ar' ? 'تم تفعيل إشعارات الصلاة 🕌' : 'Prayer notifications enabled 🕌');
+    };
+    if (Notification.permission === 'granted') {
+      enable();
+    } else if (Notification.permission === 'denied') {
+      showToast(LANG === 'ar' ? 'الإشعارات مرفوضة. فعّلها من إعدادات المتصفح/الهاتف' : 'Notifications blocked. Enable them in browser/phone settings');
+    } else {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') enable();
+        else showToast(LANG === 'ar' ? 'لم يتم السماح بالإشعارات' : 'Notification permission denied');
+      });
+    }
+  } else {
+    DATA.settings.prayerNotif = false;
+    saveData();
+    clearPrayerTimers();
+    updatePrayerNotifBtn();
+    showToast(LANG === 'ar' ? 'تم إيقاف إشعارات الصلاة' : 'Prayer notifications disabled');
+  }
+}
+function clearPrayerTimers() {
+  prayerTimers.forEach(clearTimeout);
+  prayerTimers = [];
+}
+function schedulePrayerNotifications() {
+  clearPrayerTimers();
+  if (!isPrayerNotifOn()) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const loc = getLoc();
+  const now = new Date();
+  // schedule for today and tomorrow
+  for (let dayOffset = 0; dayOffset <= 1; dayOffset++) {
+    const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset);
+    const times = calcPrayer(loc.lat, loc.lng, base);
+    PRAYERS.forEach(p => {
+      const h = times[p.id];
+      if (h == null) return;
+      const target = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, Math.round(h * 60));
+      const delay = target - now;
+      // only schedule if in the future and within ~36 hours
+      if (delay < 5000 || delay > 36 * 3600 * 1000) return;
+      const tag = keyOf(base) + '-' + p.id;
+      prayerTimers.push(setTimeout(() => {
+        // avoid duplicate for same prayer same day
+        const lastKey = 'prayerNotif_' + tag;
+        if (sessionStorage.getItem(lastKey)) return;
+        sessionStorage.setItem(lastKey, '1');
+        const title = LANG === 'ar' ? ('حان وقت صلاة ' + p.name) : (p.name + ' prayer time');
+        const body = LANG === 'ar'
+          ? ('🕌 حيّ على الصلاة — ' + p.name + ' (' + (PT[p.id] || '') + ')')
+          : ('🕌 It\'s time for ' + p.name + ' (' + (PT[p.id] || '') + ')');
+        showSystemNotification(title, body);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+        showToast('🕌 ' + title);
+      }, delay));
+    });
+  }
 }
 
 /* ══ 2) Streak ══ */
@@ -2241,21 +2909,37 @@ function renderKhatma() {
   const box = document.getElementById('khatmaBox'); if (!box) return;
   const k = DATA.khatma;
   if (!k) {
-    box.innerHTML = `<label>أريد أن أختم القرآن في (يوم)</label><input type="number" id="khDays" min="1" max="365" value="30">
-      <button class="btn btn-primary btn-block" onclick="startKhatma()">ابدأ الختمة</button>`;
+    box.innerHTML = '<label>أريد أن أختم القرآن في كم يوم؟</label><input type="number" id="khDays" min="1" max="365" value="30" placeholder="مثال: 30"><div style="font-size:0.8rem;color:var(--text-muted);margin:-4px 0 10px;line-height:1.6">مثال: 30 يوم ≈ 20 صفحة/يوم • 60 يوم ≈ 10 صفحات/يوم</div><button class="btn btn-primary btn-block" onclick="startKhatma()">ابدأ الختمة</button>';
     return;
   }
-  const read = Math.min(604, quranSince(k.start)), el = Math.floor((new Date(keyOf(new Date()) + 'T00:00') - new Date(k.start + 'T00:00')) / 864e5);
-  const left = Math.max(1, k.days - el), beforeToday = Math.min(604, read - ((DATA.daily[todayKey()] || {}).quran || 0));
-  const due = Math.max(0, Math.ceil((604 - beforeToday) / left)), diff = Math.round(read - 604 * (el + 1) / k.days);
+  const read = Math.min(604, quranSince(k.start));
+  const el = Math.floor((new Date(keyOf(new Date()) + 'T00:00') - new Date(k.start + 'T00:00')) / 864e5);
+  const left = Math.max(1, k.days - el);
+  const beforeToday = Math.min(604, read - ((DATA.daily[todayKey()] || {}).quran || 0));
+  const due = Math.max(0, Math.ceil((604 - beforeToday) / left));
+  const diff = Math.round(read - 604 * (el + 1) / k.days);
   const done = read >= 604;
-  box.innerHTML = `<div class="sunan-summary-row"><span>قرأت</span><strong>${read} من 604 صفحة</strong></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${read / 604 * 100}%"></div></div>
-    <div class="kh-info">${done ? '🎉 ما شاء الله، أتممت الختمة! تقبّل الله منك' : `ورد اليوم: <b>${due}</b> صفحة • اليوم ${Math.min(el + 1, k.days)} من ${k.days}<br>${diff >= 0 ? '✅ أنت في الموعد' + (diff ? ' ومتقدم ' + diff + ' صفحة' : '') : '⏳ متأخر ' + (-diff) + ' صفحة، لحّق بإذن الله'}`}</div>
-    <button class="btn btn-ghost btn-sm btn-block" onclick="resetKhatma()">${done ? 'ختمة جديدة' : 'إلغاء الختمة'}</button>`;
+  let status;
+  if (done) status = '🎉 ما شاء الله، أتممت الختمة! تقبّل الله منك';
+  else if (diff >= 0) status = 'ورد اليوم: <b>' + due + '</b> صفحة • اليوم ' + Math.min(el + 1, k.days) + ' من ' + k.days + '<br>✅ أنت في الموعد' + (diff ? ' ومتقدم ' + diff + ' صفحة' : '');
+  else status = 'ورد اليوم: <b>' + due + '</b> صفحة • اليوم ' + Math.min(el + 1, k.days) + ' من ' + k.days + '<br>⏳ متأخر ' + (-diff) + ' صفحة، لحّق بإذن الله';
+  box.innerHTML = '<div class="sunan-summary-row"><span>قرأت</span><strong>' + read + ' من 604 صفحة</strong></div><div class="progress-bar"><div class="progress-fill" style="width:' + Math.min(100, read / 604 * 100) + '%"></div></div><div class="kh-info">' + status + '</div><button class="btn btn-ghost btn-sm btn-block" onclick="resetKhatma()">' + (done ? 'ختمة جديدة' : 'إلغاء الختمة') + '</button>';
 }
-function startKhatma() { DATA.khatma = { start: todayKey(), days: Math.max(1, parseInt(document.getElementById('khDays').value) || 30) }; saveData(); renderKhatma(); showToast('بدأت الختمة، بارك الله لك'); }
-function resetKhatma() { askConfirm('إنهاء الختمة الحالية؟', () => { DATA.khatma = null; saveData(); renderKhatma(); }, 'نعم'); }
+function startKhatma() {
+  const inp = document.getElementById('khDays');
+  const days = Math.max(1, parseInt(inp && inp.value) || 30);
+  DATA.khatma = { start: todayKey(), days: days };
+  saveData();
+  renderKhatma();
+  showToast('بدأت الختمة — حوالي ' + Math.ceil(604 / days) + ' صفحة/يوم');
+}
+function resetKhatma() {
+  askConfirm('إنهاء الختمة الحالية؟', function() {
+    DATA.khatma = null;
+    saveData();
+    renderKhatma();
+  }, 'نعم');
+}
 
 /* ══ 6) Fasting ══ */
 function sunnahFast(d) {
@@ -2273,7 +2957,7 @@ function renderFasting() {
   const box = document.getElementById('fastBox'); if (!box) return;
   const day = ensureToday(), tag = sunnahFast(new Date()), mk = todayKey().slice(0, 7);
   const cnt = Object.keys(DATA.daily).filter(k => k.startsWith(mk) && DATA.daily[k].fast).length;
-  let nxt = ''; if (!tag) { for (let i = 1; i <= 14; i++) { const d = new Date(); d.setDate(d.getDate() + i); const t = sunnahFast(d); if (t) { nxt = WD[d.getDay()] + ' (' + t + ')'; break; } } }
+  let nxt = ''; if (!tag) { for (let i = 1; i <= 14; i++) { const d = new Date(); d.setDate(d.getDate() + i); const t = sunnahFast(d); if (t) { nxt = getWD()[d.getDay()] + ' (' + t + ')'; break; } } }
   box.innerHTML = `<div class="kh-info" style="margin-top:0">${tag ? '🌙 اليوم ' + tag + ': يُسنّ صيامه' : 'أقرب يوم يُسنّ صيامه: <b>' + nxt + '</b>'}</div>
     <div class="check-item ${day.fast ? 'done' : ''}" onclick="toggleFast()" style="margin-top:10px"><div class="checkbox"></div><div class="check-label">صمتُ اليوم</div></div>
     <div class="sunan-summary-row"><span>أيام صيامك هذا الشهر</span><strong>${cnt}</strong></div>`;
@@ -2345,33 +3029,84 @@ function dayStats(k) {
 function renderWeekly() {
   const bars = document.getElementById('wkBars'); if (!bars) return;
   const days = []; for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push({ d, s: dayStats(keyOf(d)) }); }
-  bars.innerHTML = days.map((x, i) => `<div class="wk-col"><div class="wk-pct">${x.s.p}</div><div class="wk-track"><i class="${i === 6 ? 'today' : ''}" style="height:${Math.max(4, x.s.p)}%"></i></div><div class="wk-day">${WD[x.d.getDay()].replace('ال', '')}</div></div>`).join('');
+  bars.innerHTML = days.map((x, i) => `<div class="wk-col"><div class="wk-pct">${x.s.p}</div><div class="wk-track"><i class="${i === 6 ? 'today' : ''}" style="height:${Math.max(4, x.s.p)}%"></i></div><div class="wk-day">${getWD()[x.d.getDay()].replace('ال', '')}</div></div>`).join('');
   const avg = Math.round(days.reduce((a, x) => a + x.s.p, 0) / 7), act = days.filter(x => x.s.dn > 0);
   const best = days.reduce((a, x) => x.s.p > a.s.p ? x : a), low = (act.length ? act : days).reduce((a, x) => x.s.p < a.s.p ? x : a);
-  document.getElementById('wkSum').innerHTML = act.length ? `متوسطك <b>${avg}%</b> • أفضل يوم <b>${WD[best.d.getDay()]}</b> (${best.s.p}%) • أضعف يوم <b>${WD[low.d.getDay()]}</b> (${low.s.p}%)` : 'سجّل إنجازاتك ليظهر تقريرك هنا';
+  document.getElementById('wkSum').innerHTML = act.length ? `متوسطك <b>${avg}%</b> • أفضل يوم <b>${getWD()[best.d.getDay()]}</b> (${best.s.p}%) • أضعف يوم <b>${getWD()[low.d.getDay()]}</b> (${low.s.p}%)` : 'سجّل إنجازاتك ليظهر تقريرك هنا';
+  renderCalendar();
 }
 
-/* ══ 5) Reminders ══ */
+/* ══ 5) Reminders (improved for background) ══ */
+function requestNotifPermission() {
+  if (!('Notification' in window)) { showToast(LANG === 'ar' ? 'الإشعارات غير مدعومة' : 'Notifications not supported'); return; }
+  Notification.requestPermission().then(p => {
+    showToast(p === 'granted' ? t('notifAllowed') : t('notifDenied'));
+    const btn = document.getElementById('notifPermBtn');
+    if (btn && p === 'granted') btn.style.display = 'none';
+  });
+}
 function renderReminders() {
   const l = document.getElementById('remList'); if (!l) return;
-  l.innerHTML = DATA.reminders.length ? DATA.reminders.map(r => `<div class="list-item"><div class="list-item-content"><div class="list-item-title">${escapeHtml(r.label)}</div><div class="list-item-sub">⏰ ${r.time}</div></div><button class="action-btn delete" onclick="deleteReminder('${r.id}')">🗑</button></div>`).join('') : '<div class="ach-empty" style="display:block;margin-bottom:10px">لا توجد تذكيرات</div>';
+  l.innerHTML = DATA.reminders.length ? DATA.reminders.map(r => `<div class="list-item"><div class="list-item-content"><div class="list-item-title">${escapeHtml(r.label)}</div><div class="list-item-sub">⏰ ${r.time}</div></div><button class="action-btn delete" onclick="deleteReminder('${r.id}')">🗑</button></div>`).join('') : `<div class="ach-empty" style="display:block;margin-bottom:10px">${t('noReminders')}</div>`;
+  const btn = document.getElementById('notifPermBtn');
+  if (btn && 'Notification' in window && Notification.permission === 'granted') btn.style.display = 'none';
 }
 function addReminder() {
-  const t = document.getElementById('remTime').value, l = document.getElementById('remLabel').value.trim();
-  if (!t || !l) { showToast('اكتب الوقت والعنوان'); return; }
-  DATA.reminders.push({ id: Date.now().toString(), time: t, label: l });
+  const tm = document.getElementById('remTime').value, lb = document.getElementById('remLabel').value.trim();
+  if (!tm || !lb) { showToast(t('writeTimeLabel')); return; }
+  DATA.reminders.push({ id: Date.now().toString(), time: tm, label: lb });
   document.getElementById('remLabel').value = ''; saveData(); renderReminders();
-  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-  showToast('تمت إضافة التذكير');
+  scheduleAllReminders();
+  if ('Notification' in window && Notification.permission === 'default') requestNotifPermission();
+  showToast(t('reminderAdded'));
 }
-function deleteReminder(id) { DATA.reminders = DATA.reminders.filter(r => r.id !== id); saveData(); renderReminders(); }
+function deleteReminder(id) { DATA.reminders = DATA.reminders.filter(r => r.id !== id); saveData(); renderReminders(); scheduleAllReminders(); }
+function showSystemNotification(title, body) {
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const n = new Notification(title || t('appTitle'), {
+        body: body,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☪</text></svg>',
+        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☪</text></svg>',
+        tag: 'daylife-rem-' + Date.now(),
+        requireInteraction: false,
+        silent: false
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    }
+  } catch (e) {}
+}
 function checkReminders() {
   const now = new Date(), hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), tag = todayKey() + hm;
   DATA.reminders.forEach(r => {
     if (r.time !== hm || r.last === tag) return;
     r.last = tag; localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
-    showToast('⏰ ' + r.label); if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('إدارة اليوم', { body: r.label }); } catch (e) {}
+    showToast('⏰ ' + r.label);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    showSystemNotification(t('appTitle'), r.label);
+  });
+}
+/* Schedule next reminder timeouts (works while page is open or in background tab) */
+let remTimers = [];
+function scheduleAllReminders() {
+  remTimers.forEach(clearTimeout); remTimers = [];
+  const now = new Date();
+  DATA.reminders.forEach(r => {
+    const [hh, mm] = r.time.split(':').map(Number);
+    let target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    const delay = target - now;
+    if (delay > 0 && delay < 86400000 * 2) {
+      remTimers.push(setTimeout(() => {
+        const tag = todayKey() + r.time;
+        if (r.last === tag) return;
+        r.last = tag; localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+        showToast('⏰ ' + r.label);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        showSystemNotification(t('appTitle'), r.label);
+        scheduleAllReminders(); // reschedule for next day
+      }, delay));
+    }
   });
 }
 
@@ -2548,7 +3283,7 @@ function stReport() {
   const lessons = S.subjects.reduce((a, v) => a + (v.lessons || []).length, 0), ldone = S.subjects.reduce((a, v) => a + (v.lessons || []).filter(x => x.done).length, 0);
   const ex = S.subjects.filter(v => v.exam && daysTo(v.exam) >= 0).sort((a, b) => a.exam.localeCompare(b.exam))[0];
   return `<div class="card"><div class="card-title"><span class="title-icon">📊</span> آخر 7 أيام</div>
-    <div class="wk-bars">${days.map((x, i) => `<div class="wk-col"><div class="wk-pct">${x.m}</div><div class="wk-track"><i class="${i === 6 ? 'today' : ''}" style="height:${Math.max(4, x.m / mx * 100)}%"></i></div><div class="wk-day">${WD[x.d.getDay()].replace('ال', '')}</div></div>`).join('')}</div>
+    <div class="wk-bars">${days.map((x, i) => `<div class="wk-col"><div class="wk-pct">${x.m}</div><div class="wk-track"><i class="${i === 6 ? 'today' : ''}" style="height:${Math.max(4, x.m / mx * 100)}%"></i></div><div class="wk-day">${getWD()[x.d.getDay()].replace('ال', '')}</div></div>`).join('')}</div>
     <div class="wk-sum">إجمالي الأسبوع <b>${(tot / 60).toFixed(1)}</b> ساعة • اليوم <b>${todayMin()}</b> من ${S.target} دقيقة${streak ? '<br>🔥 ' + streak + ' يوم متتالي من المذاكرة' : ''}</div></div>
     <div class="card"><div class="card-title"><span class="title-icon gold">📈</span> ملخص</div>
     <div class="sunan-summary-row"><span>الأهداف المحققة</span><strong>${S.goals.filter(x => x.done).length}/${S.goals.length}</strong></div>
@@ -2563,23 +3298,27 @@ function updateDashboard() {
   const day = ensureToday();
   const key = todayKey();
 
-  const adhkarNames = { morning: 'أذكار الصباح', evening: 'أذكار المساء', sleep: 'أذكار النوم' };
+  const adhkarNames = {
+    morning: t('morningAdhkar'),
+    evening: t('eveningAdhkar'),
+    sleep: t('sleepAdhkar')
+  };
   const dailyTasks = DATA.tasks.filter(t => t.type === 'daily' || (t.type === 'home' && t.period === 'daily'));
   const habits = DATA.habits || [];
 
   const groups = [
-    { icon: '🕌', label: 'الصلوات', total: PRAYERS.length,
-      done: PRAYERS.filter(p => day.prayers[p.id]).map(p => 'صلاة ' + p.name) },
-    { icon: '🤲', label: 'السنن', total: SUNAN_RAWATIB.length + 1,
+    { icon: '🕌', label: LANG === 'en' ? 'Prayers' : 'الصلوات', total: PRAYERS.length,
+      done: PRAYERS.filter(p => day.prayers[p.id]).map(p => (LANG === 'en' ? '' : 'صلاة ') + p.name) },
+    { icon: '🤲', label: LANG === 'en' ? 'Sunnah' : 'السنن', total: SUNAN_RAWATIB.length + 1,
       done: SUNAN_RAWATIB.filter(x => (day.sunan || {})[x.id]).map(x => x.name)
-            .concat((day.sunan || {}).witr ? ['الوتر'] : []) },
-    { icon: '📿', label: 'الأذكار', total: 3,
+            .concat((day.sunan || {}).witr ? [LANG === 'en' ? 'Witr' : 'الوتر'] : []) },
+    { icon: '📿', label: LANG === 'en' ? 'Adhkar' : 'الأذكار', total: 3,
       done: Object.keys(adhkarNames).filter(k => day.adhkar[k]).map(k => adhkarNames[k]) },
-    { icon: '📖', label: 'ورد القرآن', total: 1,
-      done: (day.quran || 0) > 0 ? ['القرآن (' + day.quran + ' صفحة)'] : [] },
-    { icon: '📋', label: 'المهام', total: dailyTasks.length,
+    { icon: '📖', label: LANG === 'en' ? 'Quran' : 'ورد القرآن', total: 1,
+      done: (day.quran || 0) > 0 ? [(LANG === 'en' ? 'Quran (' : 'القرآن (') + day.quran + (LANG === 'en' ? ' pages)' : ' صفحة)')] : [] },
+    { icon: '📋', label: LANG === 'en' ? 'Tasks' : 'المهام', total: dailyTasks.length,
       done: dailyTasks.filter(t => isTaskDoneToday(t)).map(t => t.title) },
-    { icon: '🔥', label: 'العادات', total: habits.length,
+    { icon: '🔥', label: LANG === 'en' ? 'Habits' : 'العادات', total: habits.length,
       done: habits.filter(h => h.doneDates && h.doneDates.includes(key)).map(h => h.title) }
   ];
 
@@ -2594,13 +3333,13 @@ function updateDashboard() {
   document.getElementById('hero').classList.toggle('complete', total > 0 && done === total);
 
   let msg;
-  if (done === 0) msg = 'ابدأ يومك باسم الله';
-  else if (pct < 40) msg = 'بداية مباركة، واصل بإذن الله';
-  else if (pct < 75) msg = 'بارك الله في سعيك، أنت في منتصف الطريق';
-  else if (pct < 100) msg = 'ما شاء الله، أوشكت على الإتمام';
-  else msg = 'تقبّل الله منك، يوم مبارك ✨';
+  if (done === 0) msg = t('msg0');
+  else if (pct < 40) msg = t('msg40');
+  else if (pct < 75) msg = t('msg75');
+  else if (pct < 100) msg = t('msg99');
+  else msg = t('msg100');
   document.getElementById('heroMsg').textContent = msg;
-  const stk = prayerStreak(); document.getElementById('heroStreak').textContent = stk > 0 ? '🔥 ' + stk + ' يوم متتالي بالصلوات الخمس' : '';
+  const stk = prayerStreak(); document.getElementById('heroStreak').textContent = stk > 0 ? '🔥 ' + stk + t('streakPrayers') : '';
   renderWeekly();
 
   document.getElementById('achRows').innerHTML = groups.map(g => {
@@ -2617,32 +3356,45 @@ function updateDashboard() {
   const MAX = 12;
   const chips = names.slice(0, MAX).map(n => `<span class="ach-chip">${escapeHtml(n)}</span>`);
   if (names.length > MAX) chips.push(`<span class="ach-chip more">+${names.length - MAX}</span>`);
-  document.getElementById('achChips').innerHTML = chips.length ? chips.join('') : '<span class="ach-empty">لم تسجّل إنجازاً بعد، وأول الغيث قطرة 🌧</span>';
+  document.getElementById('achChips').innerHTML = chips.length ? chips.join('') : `<span class="ach-empty">${t('noAchievements')}</span>`;
 }
 
 function renderHome() {
-  updateDashboard();
-  renderDua();
-  updatePrayerTimes();
-  renderPrayers('prayerGrid');
-  renderTodayTasks();
-  updateTasksDone();
-  const day = ensureToday();
-  document.querySelectorAll('#moodGrid .mood-btn').forEach(b =>
-    b.classList.toggle('active', parseInt(b.dataset.mood) === (day.mood||0))
-  );
+  try {
+    updateDashboard();
+    renderDua();
+    renderPrayers('prayerGrid');
+    updatePrayerTimes(); // after prayers so times appear under each prayer
+    renderTodayTasks();
+    updateTasksDone();
+    renderWater();
+    renderHealth();
+    renderOccasions();
+    renderBadges();
+    const day = ensureToday();
+    document.querySelectorAll('#moodGrid .mood-btn').forEach(b =>
+      b.classList.toggle('active', parseInt(b.dataset.mood) === (day.mood || 0))
+    );
+  } catch (e) { console.warn('renderHome', e); }
 }
 
 function renderIbada() {
-  renderPrayers('prayerGrid2');
-  updatePrayerTimes();
-  renderSunan(); renderKhatma(); renderFasting(); renderRamadan(); renderSadaqa();
-  renderAdhkar();
+  try { renderPrayers('prayerGrid2'); } catch (e) { console.warn(e); }
+  try { updatePrayerTimes(); } catch (e) { console.warn(e); }
+  try { renderSunan(); } catch (e) { console.warn(e); }
+  try { renderKhatma(); } catch (e) { console.warn(e); }
+  try { renderFasting(); } catch (e) { console.warn(e); }
+  try { renderRamadan(); } catch (e) { console.warn(e); }
+  try { renderSadaqa(); } catch (e) { console.warn(e); }
+  try { renderAdhkar(); } catch (e) { console.warn(e); }
   const day = ensureToday();
-  document.getElementById('quranPages').value = day.quran || 0;
-  document.getElementById('quranMonth').textContent = DATA.quranMonth || 0;
+  const qp = document.getElementById('quranPages');
+  const qm = document.getElementById('quranMonth');
+  if (qp) qp.value = day.quran || 0;
+  if (qm) qm.textContent = DATA.quranMonth || 0;
   ['subhan','hamd','allahu','istighfar'].forEach(k => {
-    document.getElementById('c-' + k).textContent = day.dhikr[k] || 0;
+    const el = document.getElementById('c-' + k);
+    if (el) el.textContent = (day.dhikr && day.dhikr[k]) || 0;
   });
 }
 
@@ -2686,10 +3438,306 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ══ Dark Mode ══ */
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('dayLifeDark', isDark ? '1' : '0');
+  const btn = document.getElementById('darkBtn');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
+function applyDark() {
+  if (localStorage.getItem('dayLifeDark') === '1') {
+    document.body.classList.add('dark');
+    const btn = document.getElementById('darkBtn');
+    if (btn) btn.textContent = '☀️';
+  }
+}
+
+/* ══ Water ══ */
+function renderWater() {
+  const day = ensureToday();
+  const goal = (DATA.settings && DATA.settings.waterGoal) || 8;
+  const cont = document.getElementById('waterCircles');
+  if (!cont) return;
+  cont.innerHTML = '';
+  for (let i = 0; i < goal; i++) {
+    const d = document.createElement('div');
+    d.className = 'water-drop' + (i < (day.water || 0) ? ' filled' : '');
+    d.textContent = i < (day.water || 0) ? '💧' : '';
+    d.onclick = () => setWater(i + 1 === day.water ? i : i + 1);
+    cont.appendChild(d);
+  }
+  const wc = document.getElementById('waterCount');
+  const wg = document.getElementById('waterGoalLabel');
+  if (wc) wc.textContent = day.water || 0;
+  if (wg) wg.textContent = goal;
+}
+function setWater(n) {
+  const day = ensureToday();
+  day.water = Math.max(0, n);
+  saveData();
+  renderWater();
+  renderBadges();
+  updateDashboard();
+}
+
+/* ══ Sleep & Exercise & Weight ══ */
+const MOOD_ICONS = ['—', '😞', '😐', '🙂', '😊', '🤩'];
+function renderHealth() {
+  const day = ensureToday();
+  const sv = document.getElementById('sleepVal');
+  const ev = document.getElementById('exVal');
+  const wv = document.getElementById('weightVal');
+  const wi = document.getElementById('weightInput');
+  const mv = document.getElementById('moodHealthVal');
+  const mi = document.getElementById('moodHealthIcon');
+  if (sv) sv.textContent = day.sleep ? day.sleep + 'س' : '—';
+  if (ev) ev.textContent = day.exercise ? day.exercise + 'د' : '—';
+  if (wv) wv.textContent = day.weight ? day.weight : '—';
+  if (wi && document.activeElement !== wi) wi.value = day.weight || '';
+  if (mv) mv.textContent = day.mood ? day.mood + '/5' : '—';
+  if (mi) mi.textContent = MOOD_ICONS[day.mood || 0] || '—';
+}
+function adjSleep(d) {
+  const day = ensureToday();
+  day.sleep = Math.max(0, Math.min(16, Math.round(((day.sleep || 0) + d) * 10) / 10));
+  saveData();
+  renderHealth();
+}
+function adjExercise(d) {
+  const day = ensureToday();
+  day.exercise = Math.max(0, Math.min(300, (day.exercise || 0) + d));
+  saveData();
+  renderHealth();
+}
+function setWeight(v) {
+  const day = ensureToday();
+  const n = parseFloat(v);
+  day.weight = (!isNaN(n) && n > 0) ? Math.round(n * 10) / 10 : '';
+  saveData();
+  renderHealth();
+}
+
+/* ══ Islamic Occasions ══ */
+function renderOccasions() {
+  const card = document.getElementById('occCard');
+  if (!card) return;
+  const now = new Date();
+  const w = now.getDay();
+  const h = hijri(now);
+  const items = [];
+  if (w === 1) items.push({ t: '🌙 يوم الاثنين', d: 'يُسنّ صيام يوم الاثنين' });
+  if (w === 4) items.push({ t: '🌙 يوم الخميس', d: 'يُسنّ صيام يوم الخميس' });
+  if (h.d >= 13 && h.d <= 15) items.push({ t: '🌕 الأيام البيض', d: 'يُسنّ صيام الأيام البيض (13-14-15 من كل شهر هجري)' });
+  if (h.m === 9) items.push({ t: '🕋 رمضان المبارك', d: 'اليوم ' + h.d + ' من رمضان — تقبّل الله صيامكم وقيامكم' });
+  if (h.m === 9 && h.d >= 21) items.push({ t: '🌟 العشر الأواخر', d: 'الاجتهاد في القيام والدعاء وليلة القدر' });
+  if (h.m === 10 && h.d === 1) items.push({ t: '🎉 عيد الفطر', d: 'تقبّل الله طاعتكم، كل عام وأنتم بخير' });
+  if (h.m === 12 && h.d >= 8 && h.d <= 13) items.push({ t: '🕋 أيام ذي الحجة', d: 'أيام فضل عظيم، يُستحبّ الإكثار من العمل الصالح' });
+  if (h.m === 12 && h.d === 10) items.push({ t: '🎉 عيد الأضحى', d: 'تقبّل الله منكم، كل عام وأنتم بخير' });
+  if (h.m === 1 && h.d === 10) items.push({ t: '🌙 يوم عاشوراء', d: 'يُسنّ صيام يوم عاشوراء' });
+  if (h.m === 7 && h.d === 27) items.push({ t: '✨ ليلة الإسراء والمعراج', d: 'ليلة عظيمة في سيرة النبي ﷺ' });
+  if (h.m === 9 && h.d === 27) items.push({ t: '🌟 ليلة القدر (مرجّحة)', d: 'التمسوا ليلة القدر في العشر الأواخر' });
+  if (!items.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('occTitle').textContent = items.map(x => x.t).join(' • ');
+  document.getElementById('occDesc').textContent = items.map(x => x.d).join(' — ');
+}
+
+/* ══ Badges ══ */
+const BADGES = [
+  { id: 'prayer7', icon: '🕌', nameAr: '7 أيام صلوات', nameEn: '7 Prayer Days', check: () => prayerStreak() >= 7 },
+  { id: 'prayer30', icon: '🕋', nameAr: '30 يوم صلوات', nameEn: '30 Prayer Days', check: () => prayerStreak() >= 30 },
+  { id: 'quran30', icon: '📖', nameAr: '30 صفحة قرآن', nameEn: '30 Quran Pages', check: () => (DATA.quranMonth || 0) >= 30 },
+  { id: 'khatma', icon: '📗', nameAr: 'ختمة قرآن', nameEn: 'Quran Khatma', check: () => DATA.khatma && quranSince(DATA.khatma.start) >= 604 },
+  { id: 'habit7', icon: '🔥', nameAr: 'عادة 7 أيام', nameEn: '7-Day Habit', check: () => (DATA.habits || []).some(h => (h.streak || 0) >= 7) },
+  { id: 'habit30', icon: '💪', nameAr: 'عادة 30 يوم', nameEn: '30-Day Habit', check: () => (DATA.habits || []).some(h => (h.streak || 0) >= 30) },
+  { id: 'water8', icon: '💧', nameAr: '8 أكواب اليوم', nameEn: '8 Cups Today', check: () => (ensureToday().water || 0) >= ((DATA.settings && DATA.settings.waterGoal) || 8) },
+  { id: 'fast3', icon: '🌙', nameAr: '3 أيام صيام', nameEn: '3 Fasting Days', check: () => Object.keys(DATA.daily || {}).filter(k => DATA.daily[k].fast).length >= 3 },
+  { id: 'notes10', icon: '📝', nameAr: '10 مذكرات', nameEn: '10 Notes', check: () => (DATA.notesList || []).length >= 10 },
+  { id: 'sadaqa5', icon: '🤝', nameAr: '5 صدقات', nameEn: '5 Charities', check: () => (DATA.sadaqa || []).length >= 5 }
+];
+function renderBadges() {
+  const grid = document.getElementById('badgeGrid');
+  if (!grid) return;
+  grid.innerHTML = BADGES.map(b => {
+    const earned = b.check();
+    const name = LANG === 'en' ? b.nameEn : b.nameAr;
+    return `<div class="badge ${earned ? 'earned' : ''}"><span class="badge-ico">${b.icon}</span>${name}</div>`;
+  }).join('');
+}
+
+/* ══ Calendar (last 28 days) ══ */
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+  const today = new Date();
+  let html = '';
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const k = keyOf(d);
+    const s = dayStats(k);
+    const isToday = i === 0;
+    html += `<div class="cal-day ${isToday ? 'today' : ''} ${s.dn > 0 ? 'has' : ''}" title="${k}: ${s.p}%">
+      <span>${d.getDate()}</span>
+      ${s.dn > 0 ? `<span class="cd-pct">${s.p}%</span>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ══ Share Weekly Report ══ */
+function shareWeekly() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push({ d, s: dayStats(keyOf(d)) });
+  }
+  const avg = Math.round(days.reduce((a, x) => a + x.s.p, 0) / 7);
+  const best = days.reduce((a, x) => x.s.p > a.s.p ? x : a);
+  const lines = [
+    LANG === 'en' ? '📊 My Weekly Report — Day Manager' : '📊 تقريري الأسبوعي — إدارة اليوم',
+    '━━━━━━━━━━━━━━',
+    (LANG === 'en' ? 'Average: ' : 'المتوسط: ') + avg + '%',
+    (LANG === 'en' ? 'Best day: ' : 'أفضل يوم: ') + getWD()[best.d.getDay()] + ' (' + best.s.p + '%)',
+    '',
+    ...days.map(x => getWD()[x.d.getDay()].slice(0, 3) + ': ' + '█'.repeat(Math.round(x.s.p / 10)) + ' ' + x.s.p + '%'),
+    '━━━━━━━━━━━━━━',
+    LANG === 'en' ? 'Generated by Day & Life Manager' : 'من تطبيق إدارة اليوم والحياة'
+  ];
+  const text = lines.join('\n');
+  if (navigator.share) {
+    navigator.share({ title: LANG === 'en' ? 'Weekly Report' : 'التقرير الأسبوعي', text }).catch(() => {
+      navigator.clipboard.writeText(text).then(() => showToast(LANG === 'en' ? 'Copied!' : 'تم النسخ'));
+    });
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast(LANG === 'en' ? 'Report copied!' : 'تم نسخ التقرير')).catch(() => {
+      prompt(LANG === 'en' ? 'Copy:' : 'انسخ:', text);
+    });
+  }
+}
+
+/* ══ PDF Export (print-friendly → Save as PDF) ══ */
+function openPrintWindow(title, bodyHtml) {
+  const w = window.open('', '_blank');
+  if (!w) { showToast(LANG === 'ar' ? 'اسمح بالنوافذ المنبثقة للتصدير' : 'Allow popups to export'); return; }
+  w.document.write('<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><title>' + title + '</title>' +
+    '<style>body{font-family:Tahoma,Segoe UI,sans-serif;padding:24px;color:#122820;line-height:1.7}' +
+    'h1{color:#0a3d2e;font-size:1.3rem;border-bottom:2px solid #c9a227;padding-bottom:8px}' +
+    '.bar{background:#efe9db;border-radius:6px;height:10px;margin:4px 0 12px;overflow:hidden}' +
+    '.bar i{display:block;height:100%;background:linear-gradient(90deg,#0f5c45,#c9a227)}' +
+    '.note{border-right:3px solid #c9a227;padding:8px 12px;margin:8px 0;background:#fffcf7}' +
+    '.muted{color:#6b7f76;font-size:0.85rem}' +
+    '@media print{button{display:none}}</style></head><body>' +
+    '<h1>' + title + '</h1>' + bodyHtml +
+    '<p class="muted" style="margin-top:24px">© Ahmed Eltabakh 2026 — إدارة اليوم والحياة</p>' +
+    '<script>setTimeout(function(){window.print()},400)<\/script></body></html>');
+  w.document.close();
+}
+function exportWeeklyPDF() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push({ d: d, s: dayStats(keyOf(d)) });
+  }
+  const avg = Math.round(days.reduce(function(a, x) { return a + x.s.p; }, 0) / 7);
+  let html = '<p><b>المتوسط:</b> ' + avg + '%</p>';
+  days.forEach(function(x) {
+    html += '<div><b>' + getWD()[x.d.getDay()] + '</b> — ' + x.s.p + '%' +
+      '<div class="bar"><i style="width:' + x.s.p + '%"></i></div></div>';
+  });
+  // linked habits summary
+  if ((DATA.habits || []).length) {
+    html += '<h2 style="font-size:1.05rem;margin-top:18px">العادات</h2>';
+    DATA.habits.forEach(function(h) {
+      const g = h.goalId ? (DATA.goals || []).find(function(x) { return x.id === h.goalId; }) : null;
+      html += '<div class="muted">🔥 ' + escapeHtml(h.title) + ' — سلسلة ' + (h.streak || 0) +
+        (h.target ? '/' + h.target : '') + (g ? ' ← ' + escapeHtml(g.title) : '') + '</div>';
+    });
+  }
+  openPrintWindow('التقرير الأسبوعي', html);
+}
+function exportNotesPDF() {
+  const arr = DATA.notesList || [];
+  if (!arr.length) { showToast('لا توجد مذكرات'); return; }
+  let html = '';
+  arr.forEach(function(n) {
+    let d = n.date;
+    try { d = new Date(n.date + 'T00:00:00').toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+    if (n.audio) {
+      html += '<div class="note"><div class="muted">' + d + (n.time ? ' • ' + n.time : '') + ' 🎤</div><p>مذكرة صوتية</p></div>';
+    } else {
+      html += '<div class="note"><div class="muted">' + d + (n.time ? ' • ' + n.time : '') + '</div><p>' + escapeHtml(n.text || '') + '</p></div>';
+    }
+  });
+  openPrintWindow('مذكراتي', html);
+}
+
+/* ══ Voice Notes ══ */
+let voiceRec = null, voiceChunks = [], voiceRecording = false;
+function toggleVoiceNote() {
+  if (voiceRecording) { stopVoiceNote(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('التسجيل الصوتي غير مدعوم على هذا الجهاز');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+    voiceChunks = [];
+    try { voiceRec = new MediaRecorder(stream); } catch (e) { showToast('تعذّر بدء التسجيل'); stream.getTracks().forEach(function(t){t.stop();}); return; }
+    voiceRec.ondataavailable = function(e) { if (e.data.size) voiceChunks.push(e.data); };
+    voiceRec.onstop = function() {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      const blob = new Blob(voiceChunks, { type: voiceRec.mimeType || 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = function() {
+        const now = new Date();
+        DATA.notesList.push({
+          id: Date.now().toString(),
+          date: todayKey(),
+          time: now.toLocaleTimeString(LANG === 'en' ? 'en-US' : 'ar-EG', { hour: 'numeric', minute: '2-digit' }),
+          text: '🎤 مذكرة صوتية',
+          audio: reader.result
+        });
+        saveData();
+        renderNotes();
+        showToast('تم حفظ المذكرة الصوتية');
+        const st = document.getElementById('voiceStatus');
+        if (st) st.textContent = '';
+        const btn = document.getElementById('voiceBtn');
+        if (btn) btn.textContent = '🎤 تسجيل صوتي';
+      };
+      reader.readAsDataURL(blob);
+    };
+    voiceRec.start();
+    voiceRecording = true;
+    const btn = document.getElementById('voiceBtn');
+    if (btn) btn.textContent = '⏹ إيقاف التسجيل';
+    const st = document.getElementById('voiceStatus');
+    if (st) st.textContent = 'جاري التسجيل... اضغط إيقاف عند الانتهاء';
+  }).catch(function() {
+    showToast('يلزم السماح بالميكروفون للتسجيل');
+  });
+}
+function stopVoiceNote() {
+  if (voiceRec && voiceRecording) {
+    voiceRecording = false;
+    voiceRec.stop();
+  }
+}
+
 function init() {
+  applyDark();
+  applyLanguage();
   updateDates();
   ensureToday();
   renderHome();
+  scheduleAllReminders();
+  schedulePrayerNotifications();
+  updatePrayerNotifBtn();
+  if (DATA.reminders && DATA.reminders.length && 'Notification' in window && Notification.permission === 'default') {
+    // soft prompt later in settings
+  }
 }
 
 /* ── Swipe between pages ── */
@@ -2725,8 +3773,19 @@ function init() {
   }, { passive: true });
 })();
 
+// Keep page alive in background tab for timers
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    checkReminders();
+    scheduleAllReminders();
+    updatePrayerTimes();
+  }
+});
+
 updatePrayerTimes();
-setInterval(() => { updatePrayerTimes(); checkReminders(); }, 20000);
+setInterval(() => { updatePrayerTimes(); checkReminders(); }, 15000);
+// Also check more frequently when possible
+setInterval(checkReminders, 30000);
 init();
 </script>
 </body>
