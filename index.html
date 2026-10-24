@@ -1,3 +1,12 @@
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    if (list.length) return list[0].focus();
+    return clients.openWindow('./');
+  }));
+});
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -26,7 +35,7 @@ if ('serviceWorker' in navigator) {
   `;
   const blob = new Blob([swCode], {type: 'application/javascript'});
   const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
+  navigator.serviceWorker.register('sw.js').catch(() => navigator.serviceWorker.register(swUrl).catch(() => {}));
 }
 </script>
 <style>
@@ -585,6 +594,11 @@ if ('serviceWorker' in navigator) {
     cursor: pointer;
     transition: all 0.3s var(--ease);
   }
+  .mood-btn { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .mood-emoji { font-size:1.6rem; line-height:1; }
+  .mood-name { font-size:0.62rem; font-weight:700; color:var(--text-soft, #5a6b64); }
+  .mood-day { flex:1; text-align:center; font-size:0.62rem; opacity:.85 }
+  .mood-day b { display:block; font-size:1.15rem; font-weight:400; margin-bottom:2px }
   .mood-btn:active { transform: scale(0.9); }
   .mood-btn.active {
     border-color: var(--gold);
@@ -1360,6 +1374,85 @@ if ('serviceWorker' in navigator) {
   .lock-err { min-height: 1.3em; margin: -4px 0 10px; font-size: 0.82rem; font-weight: 700; color: var(--danger); }
   .shake { animation: shake 0.4s; }
   @keyframes shake { 20%, 60% { transform: translateX(-9px); } 40%, 80% { transform: translateX(9px); } }
+
+  /* ══ Study v2: hero + subject map ══ */
+  .st-hero { position:relative; border-radius:22px; padding:16px; margin-bottom:14px; color:#fff; overflow:hidden;
+    background: var(--pat-gold), linear-gradient(150deg, var(--green-deep), var(--green-dark) 55%, var(--green));
+    border:1.5px solid var(--gold); box-shadow: var(--shadow); }
+  .st-hero::after { content:''; position:absolute; inset:5px; border:1px solid rgba(232,197,71,.28); border-radius:17px; pointer-events:none; }
+  .st-hero-row { display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
+  .st-ring { position:relative; width:96px; height:96px; flex-shrink:0; }
+  .st-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .st-ring .trk { fill:none; stroke:rgba(255,255,255,.14); stroke-width:9; }
+  .st-ring .bar { fill:none; stroke:url(#stGold); stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .9s var(--ease); }
+  .st-ring-c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15; }
+  .st-ring-c b { font-size:1.35rem; color:var(--gold-bright); font-variant-numeric:tabular-nums; }
+  .st-ring-c small { font-size:.62rem; opacity:.85; }
+  .st-hero-msg { flex:1; min-width:0; }
+  .st-hero-msg h3 { font-size:1rem; font-weight:800; color:var(--gold-bright); margin:0 0 4px; }
+  .st-hero-msg p { font-size:.8rem; line-height:1.8; margin:0; color:var(--gold-soft); opacity:.95; }
+  .st-chips { display:flex; gap:7px; margin-top:12px; flex-wrap:wrap; position:relative; z-index:1; }
+  .st-pill { flex:1; min-width:92px; background:rgba(255,255,255,.1); border:1px solid rgba(232,197,71,.28); border-radius:14px; padding:8px 10px; text-align:center; }
+  .st-pill b { display:block; font-size:.95rem; color:var(--gold-bright); }
+  .st-pill span { font-size:.66rem; opacity:.85; }
+  .st-lvl { height:5px; border-radius:4px; background:rgba(255,255,255,.15); margin-top:5px; overflow:hidden; }
+  .st-lvl i { display:block; height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-bright)); border-radius:4px; transition:width .8s var(--ease); }
+
+  .st-map-card { padding:14px 10px 10px; }
+  .st-map-head { display:flex; align-items:center; gap:8px; padding:0 8px 4px; font-weight:800; color:var(--green-dark); }
+  .st-map-head small { margin-right:auto; font-weight:600; font-size:.72rem; color:var(--text-muted); }
+  .st-map { position:relative; width:100%; aspect-ratio:1/1; max-width:460px; margin:0 auto; }
+  .st-map svg.st-lines { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .st-orbit { fill:none; stroke:var(--gold); stroke-opacity:.45; stroke-width:.35; stroke-dasharray:1.2 1.8; transform-box:fill-box; transform-origin:center; animation:stSpin 80s linear infinite; }
+  .st-orbit.rev { animation-direction:reverse; animation-duration:120s; }
+  @keyframes stSpin { to { transform:rotate(360deg); } }
+  .st-link { stroke-width:.5; stroke-opacity:.5; stroke-dasharray:1 1.2; animation:stFlow 3s linear infinite; }
+  @keyframes stFlow { to { stroke-dashoffset:-4.4; } }
+  .st-hub { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:2;
+    padding:5px; box-shadow:0 0 0 6px rgba(201,162,39,.12), 0 8px 26px rgba(6,46,36,.25); animation:stPulse 3.2s ease-in-out infinite; }
+  @keyframes stPulse { 50% { box-shadow:0 0 0 12px rgba(201,162,39,.06), 0 8px 26px rgba(6,46,36,.25); } }
+  .st-hub-in { width:100%; height:100%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    background:linear-gradient(150deg,var(--green-deep),var(--green)); color:var(--gold-bright); line-height:1.2; padding:4px; }
+  .st-hub-in b { font-size:1.15rem; }
+  .st-hub-in small { font-size:.58rem; color:#fff; opacity:.85; }
+  .st-node { position:absolute; transform:translate(-50%,-50%); border:none; background:none; padding:0; cursor:pointer; z-index:3; font-family:inherit; -webkit-tap-highlight-color:transparent; }
+  .st-node.anim { animation:stPop .6s var(--ease) backwards; }
+  @keyframes stPop { from { opacity:0; transform:translate(-50%,-50%) scale(.2); } }
+  .st-bubble { width:100%; aspect-ratio:1/1; border-radius:50%; padding:4px; transition:transform .3s var(--ease), box-shadow .3s var(--ease); box-shadow:0 4px 14px rgba(6,46,36,.18); }
+  .st-node:active .st-bubble { transform:scale(.92); }
+  .st-node.sel .st-bubble { transform:scale(1.14); box-shadow:0 0 0 3px var(--gold-bright), 0 8px 22px rgba(201,162,39,.45); }
+  .st-bubble-in { width:100%; height:100%; border-radius:50%; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+  .st-bubble-in .ic { font-size:1.35em; }
+  .st-bubble-in .pc { font-size:.58rem; font-weight:800; color:var(--text-soft); margin-top:2px; }
+  .st-node-name { position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:4px; max-width:96px; font-size:.64rem; font-weight:800; color:var(--green-dark);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:rgba(255,253,248,.85); padding:0 6px; border-radius:8px; }
+  body.dark .st-node-name { background:rgba(21,46,38,.85); color:var(--gold-soft); }
+  .st-badge { position:absolute; top:-3px; right:-3px; min-width:20px; height:20px; border-radius:10px; padding:0 5px; font-size:.6rem; font-weight:800; display:flex; align-items:center; justify-content:center; color:#fff; background:var(--green-mid); border:2px solid var(--card); }
+  .st-badge.hot { background:#c4503f; }
+  .st-badge.done { background:var(--gold); }
+  .st-empty-hint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; width:60%; margin-top:70px; font-size:.82rem; color:var(--text-muted); line-height:1.8; z-index:2; }
+  .st-detail { border-top:3px solid var(--sc, var(--gold)); }
+  .st-d-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .st-d-ic { width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; background:var(--sc); color:#fff; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+  .st-d-name { font-weight:800; font-size:1.05rem; color:var(--green-dark); }
+  .st-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .st-tile { background:var(--gold-soft); border-radius:14px; padding:9px 4px; text-align:center; }
+  .st-tile b { display:block; font-size:1rem; color:var(--green-dark); }
+  .st-tile span { font-size:.66rem; color:var(--text-muted); }
+  body.dark .st-tile { background:#1a362d; }
+  body.dark .st-d-name { color:var(--gold-soft); }
+
+  /* ══ Notes polish ══ */
+  .nav-icon.svg { width:1.4rem; height:1.4rem; display:flex; align-items:center; justify-content:center; }
+  .nav-icon.svg svg { width:100%; height:100%; }
+  .pb-icon svg { width:26px; height:26px; }
+  .nt-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .nt-stat { background:var(--gold-soft); border-radius:14px; padding:9px 4px; text-align:center; }
+  .nt-stat b { display:block; font-size:1.05rem; color:var(--green-dark); }
+  .nt-stat span { font-size:.66rem; color:var(--text-muted); }
+  body.dark .nt-stat { background:#1a362d; }
+  .note-item { box-shadow:0 2px 10px rgba(6,46,36,.06); border-right-width:4px; }
+  .note-date { display:inline-flex; align-items:center; gap:6px; background:var(--gold-soft); border-radius:12px; padding:2px 10px; }
 </style>
 </head>
 <body>
@@ -1392,7 +1485,7 @@ if ('serviceWorker' in navigator) {
     <div class="top-duo">
       <div class="dua-banner" id="duaBanner">
         <div class="dua-banner-label">🤍 دعاء اليوم</div>
-        <div class="dua-text" id="duaText">...</div>
+        <div class="dua-text" id="duaText">﴿ رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ ﴾</div>
         <div class="dua-fast" id="duaFast"></div>
       </div>
       <div class="card np-card" onclick="askLocation()">
@@ -1406,7 +1499,7 @@ if ('serviceWorker' in navigator) {
             <div class="np-left" id="npLeft"></div>
           </div>
         </div>
-        <div class="np-city" id="npCity" data-i18n="tapLocation">📍 اضغط لتحديد موقعك</div>
+        <div class="np-city" id="npCity" data-i18n="tapLocation">📍 القاهرة • اضغط لتغيير الموقع</div>
       </div>
     </div>
 
@@ -1457,12 +1550,14 @@ if ('serviceWorker' in navigator) {
     <div class="card">
       <div class="card-title"><span class="title-icon gold">💫</span> المزاج اليوم</div>
       <div class="mood-grid" id="moodGrid">
-        <button class="mood-btn" data-mood="1" onclick="setMood(1)">😞</button>
-        <button class="mood-btn" data-mood="2" onclick="setMood(2)">😐</button>
-        <button class="mood-btn" data-mood="3" onclick="setMood(3)">🙂</button>
-        <button class="mood-btn" data-mood="4" onclick="setMood(4)">😊</button>
-        <button class="mood-btn" data-mood="5" onclick="setMood(5)">🤩</button>
+        <button class="mood-btn" data-mood="1" onclick="setMood(1)"><span class="mood-emoji">😞</span><small class="mood-name">زعلان</small></button>
+        <button class="mood-btn" data-mood="2" onclick="setMood(2)"><span class="mood-emoji">😐</span><small class="mood-name">عادي</small></button>
+        <button class="mood-btn" data-mood="3" onclick="setMood(3)"><span class="mood-emoji">🙂</span><small class="mood-name">كويس</small></button>
+        <button class="mood-btn" data-mood="4" onclick="setMood(4)"><span class="mood-emoji">😊</span><small class="mood-name">مبسوط</small></button>
+        <button class="mood-btn" data-mood="5" onclick="setMood(5)"><span class="mood-emoji">🤩</span><small class="mood-name">رايق جدًا</small></button>
       </div>
+      <div id="moodLabel" style="text-align:center;font-weight:700;margin-top:10px;color:var(--green-dark);min-height:1.4em"></div>
+      <div id="moodWeek" style="display:flex;justify-content:space-between;gap:4px;margin-top:10px"></div>
     </div>
 
     <!-- Islamic occasions -->
@@ -1658,7 +1753,7 @@ if ('serviceWorker' in navigator) {
 
   <!-- 8. المذكرات -->
   <section id="sec-notes" class="section">
-    <div class="page-banner"><div class="pb-icon">📝</div><div class="pb-text"><div class="pb-title" data-i18n="myNotes">مذكراتي</div><div class="pb-quote">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div></div></div>
+    <div class="page-banner"><div class="pb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#062e24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18"/><path d="M3.5 7H6M3.5 12H6M3.5 17H6"/><path d="M10 8h5M10 12h5M10 16h3" stroke="#fff"/></svg></div><div class="pb-text"><div class="pb-title" data-i18n="myNotes">مذكراتي</div><div class="pb-quote">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div></div></div>
     <div class="card">
       <div class="card-title"><span class="title-icon">📚</span> <span data-i18n="myNotes">مذكراتي</span> <span class="notes-count" id="notesCount"></span></div>
       <div id="notesList"></div>
@@ -1694,8 +1789,9 @@ if ('serviceWorker' in navigator) {
 
   <section id="sec-study" class="section">
     <div class="page-banner"><div class="pb-icon">📚</div><div class="pb-text"><div class="pb-title">المذاكرة</div><div class="pb-quote">«اللَّهُمَّ انْفَعْنِي بِمَا عَلَّمْتَنِي، وَعَلِّمْنِي مَا يَنْفَعُنِي، وَزِدْنِي عِلْمًا»</div></div></div>
+    <div id="stHero"></div>
     <div class="sub-tabs" id="stTabs">
-      <button class="sub-tab" data-st="subjects" onclick="stGo('subjects')">📘 المواد</button>
+      <button class="sub-tab" data-st="subjects" onclick="stGo('subjects')">🗺️ خريطة المواد</button>
       <button class="sub-tab" data-st="goals" onclick="stGo('goals')">🎯 أهدافي</button>
       <button class="sub-tab" data-st="timer" onclick="stGo('timer')">⏱ المؤقّت</button>
       <button class="sub-tab" data-st="notes" onclick="stGo('notes')">📝 ملحوظات</button>
@@ -1721,7 +1817,7 @@ if ('serviceWorker' in navigator) {
 
   <div class="nav-side">
     <button class="nav-item" data-sec="sec-habits" onclick="showSection('sec-habits', this)"><span class="nav-icon">🔥</span>عادات</button>
-    <button class="nav-item" data-sec="sec-notes" onclick="showSection('sec-notes', this)"><span class="nav-icon">📝</span>مذكرات</button>
+    <button class="nav-item" data-sec="sec-notes" onclick="showSection('sec-notes', this)"><span class="nav-icon svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18"/><path d="M3.5 7H6M3.5 12H6M3.5 17H6"/><path d="M10 8h5M10 12h5M10 16h3" stroke="#c9a227"/></svg></span>مذكرات</button>
     <button class="nav-item" data-sec="sec-report" onclick="showSection('sec-report', this)"><span class="nav-icon">📊</span>تقرير</button>
   </div>
 </nav>
@@ -2635,12 +2731,31 @@ function renderHabits() {
   }).join('');
 }
 
+const MOOD_NAMES = ['', 'زعلان', 'عادي', 'كويس', 'مبسوط', 'رايق جدًا'];
 function setMood(n) {
   const day = ensureToday();
-  day.mood = n;
+  day.mood = (day.mood === n) ? 0 : n; // الضغط مرة تانية يلغي الاختيار
   saveData();
-  document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.mood) === n));
-  showToast('تم تسجيل المزاج');
+  renderMood();
+  try { renderHealth(); } catch (e) {}
+  showToast(day.mood ? 'تم تسجيل المزاج: ' + MOOD_NAMES[day.mood] : 'تم إلغاء المزاج');
+}
+function renderMood() {
+  const day = ensureToday();
+  document.querySelectorAll('#moodGrid .mood-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.mood) === (day.mood || 0)));
+  const lb = document.getElementById('moodLabel');
+  if (lb) lb.textContent = day.mood ? ('مزاجك النهارده: ' + MOOD_ICONS[day.mood] + ' ' + MOOD_NAMES[day.mood]) : 'اختار مزاجك النهارده';
+  const wk = document.getElementById('moodWeek');
+  if (wk) {
+    let h = '';
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const m = (DATA.daily[keyOf(d)] || {}).mood || 0;
+      h += '<div class="mood-day"><b>' + (m ? MOOD_ICONS[m] : '·') + '</b>' + getWD()[d.getDay()] + '</div>';
+    }
+    wk.innerHTML = h;
+  }
 }
 
 function saveNote() {
@@ -2707,7 +2822,9 @@ function renderNotes() {
     list.innerHTML = `<div class="empty" style="padding:24px 10px"><div class="empty-icon">✦</div><p>${t('noNotesYet')}</p></div>`;
     return;
   }
-  list.innerHTML = arr.map(n => {
+  const mk = todayKey().slice(0, 7);
+  const statsHtml = `<div class="nt-stats"><div class="nt-stat"><b>${arr.length}</b><span>مذكرة</span></div><div class="nt-stat"><b>${arr.filter(n => n.audio).length}</b><span>تسجيل صوتي</span></div><div class="nt-stat"><b>${arr.filter(n => (n.date || '').startsWith(mk)).length}</b><span>هذا الشهر</span></div></div>`;
+  list.innerHTML = statsHtml + arr.map(n => {
     let d = n.date;
     try {
       d = new Date(n.date + 'T00:00:00').toLocaleDateString(LANG === 'en' ? 'en-US' : 'ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -2776,15 +2893,15 @@ function getLoc() {
   return (DATA.settings && DATA.settings.loc) || { lat: 30.0444, lng: 31.2357, name: defName };
 }
 function updatePrayerTimes() {
-  const loc = getLoc(), now = new Date(), t = calcPrayer(loc.lat, loc.lng, now);
+  const loc = getLoc(), now = new Date(), pt = calcPrayer(loc.lat, loc.lng, now);
   const toDate = (h, base) => new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, Math.round(h * 60));
-  PT = {}; PRAYERS.forEach(p => PT[p.id] = fmtT(t[p.id]));
+  PT = {}; PRAYERS.forEach(p => PT[p.id] = fmtT(pt[p.id]));
   // store raw hours for scheduling
   window._prayerRaw = {};
-  PRAYERS.forEach(p => { window._prayerRaw[p.id] = t[p.id]; });
+  PRAYERS.forEach(p => { window._prayerRaw[p.id] = pt[p.id]; });
   let next = null;
-  for (const p of PRAYERS) { const dt = toDate(t[p.id], now); if (dt > now) { next = { p, dt }; break; } }
-  if (!next) { const tm = new Date(now.getTime() + 864e5), t2 = calcPrayer(loc.lat, loc.lng, tm); next = { p: PRAYERS[0], dt: toDate(t2.fajr, tm) }; }
+  for (const p of PRAYERS) { const dt = toDate(pt[p.id], now); if (dt > now) { next = { p, dt }; break; } }
+  if (!next) { const tm = new Date(now.getTime() + 864e5), pt2 = calcPrayer(loc.lat, loc.lng, tm); next = { p: PRAYERS[0], dt: toDate(pt2.fajr, tm) }; }
   const mins = Math.max(0, Math.round((next.dt - now) / 60000)), hh = Math.floor(mins / 60), mm = mins % 60;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('npName', t('prayerOf') + next.p.name);
@@ -2802,10 +2919,14 @@ function askLocation() {
   if (!navigator.geolocation) { showToast(t('locUnavailable')); return; }
   showToast(t('locating'));
   navigator.geolocation.getCurrentPosition(pos => {
+    if (!DATA.settings) DATA.settings = {};
     DATA.settings.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, name: t('myLocation') };
-    saveData(); updatePrayerTimes(); renderPrayers('prayerGrid'); renderPrayers('prayerGrid2'); updatePrayerTimes();
+    try { saveData(); } catch (e) {}
+    updatePrayerTimes();
     showToast(t('locSet'));
-  }, () => showToast(t('locFail')), { timeout: 10000 });
+  }, err => {
+    showToast(err && err.code === 1 ? t('locFail') : t('locFail'));
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
 }
 
 /* ══ Prayer Time Notifications ══ */
@@ -2857,6 +2978,28 @@ function clearPrayerTimers() {
   prayerTimers.forEach(clearTimeout);
   prayerTimers = [];
 }
+function notifyPrayer(p, dayKey) {
+  const lastKey = 'prayerNotif_' + dayKey + '-' + p.id;
+  try { if (localStorage.getItem(lastKey)) return; localStorage.setItem(lastKey, '1'); } catch (e) {}
+  const title = LANG === 'ar' ? ('حان الآن وقت صلاة ' + p.name) : (p.name + ' prayer time');
+  const body = LANG === 'ar'
+    ? ('🕌 حيّ على الصلاة — ' + p.name + ' (' + (PT[p.id] || '') + ')')
+    : ("🕌 It's time for " + p.name + ' (' + (PT[p.id] || '') + ')');
+  showSystemNotification(title, body, 'prayer-' + dayKey + '-' + p.id);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+  showToast('🕌 ' + title);
+}
+function checkPrayerNow() {
+  if (!isPrayerNotifOn()) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const loc = getLoc(), now = new Date(), times = calcPrayer(loc.lat, loc.lng, now);
+  PRAYERS.forEach(p => {
+    const h = times[p.id]; if (h == null) return;
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, Math.round(h * 60));
+    const diff = now - target;
+    if (diff >= 0 && diff <= 10 * 60 * 1000) notifyPrayer(p, keyOf(now));
+  });
+}
 function schedulePrayerNotifications() {
   clearPrayerTimers();
   if (!isPrayerNotifOn()) return;
@@ -2875,19 +3018,7 @@ function schedulePrayerNotifications() {
       // only schedule if in the future and within ~36 hours
       if (delay < 5000 || delay > 36 * 3600 * 1000) return;
       const tag = keyOf(base) + '-' + p.id;
-      prayerTimers.push(setTimeout(() => {
-        // avoid duplicate for same prayer same day
-        const lastKey = 'prayerNotif_' + tag;
-        if (sessionStorage.getItem(lastKey)) return;
-        sessionStorage.setItem(lastKey, '1');
-        const title = LANG === 'ar' ? ('حان وقت صلاة ' + p.name) : (p.name + ' prayer time');
-        const body = LANG === 'ar'
-          ? ('🕌 حيّ على الصلاة — ' + p.name + ' (' + (PT[p.id] || '') + ')')
-          : ('🕌 It\'s time for ' + p.name + ' (' + (PT[p.id] || '') + ')');
-        showSystemNotification(title, body);
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-        showToast('🕌 ' + title);
-      }, delay));
+      prayerTimers.push(setTimeout(() => notifyPrayer(p, keyOf(base)), delay));
     });
   }
 }
@@ -3061,20 +3192,20 @@ function addReminder() {
   showToast(t('reminderAdded'));
 }
 function deleteReminder(id) { DATA.reminders = DATA.reminders.filter(r => r.id !== id); saveData(); renderReminders(); scheduleAllReminders(); }
-function showSystemNotification(title, body) {
+function showSystemNotification(title, body, tag) {
+  const icon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☪</text></svg>';
+  const opts = { body: body, icon: icon, badge: icon, tag: tag || ('daylife-rem-' + Date.now()), renotify: true,
+    requireInteraction: true, vibrate: [200, 100, 200, 100, 200], silent: false };
+  const fallback = () => { try { const n = new Notification(title || t('appTitle'), opts); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {} };
   try {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const n = new Notification(title || t('appTitle'), {
-        body: body,
-        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☪</text></svg>',
-        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☪</text></svg>',
-        tag: 'daylife-rem-' + Date.now(),
-        requireInteraction: false,
-        silent: false
-      });
-      n.onclick = () => { window.focus(); n.close(); };
-    }
-  } catch (e) {}
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg && reg.showNotification) reg.showNotification(title || t('appTitle'), opts).catch(fallback);
+        else fallback();
+      }).catch(fallback);
+    } else fallback();
+  } catch (e) { fallback(); }
 }
 function checkReminders() {
   const now = new Date(), hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), tag = todayKey() + hm;
@@ -3153,35 +3284,106 @@ function checkLock() {
   const b = document.getElementById('lockBox'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
   document.getElementById('lockInput').value = '';
 }
-function stGo(t) { stTab = t; renderStudy(); }
+function stGo(t) { stTab = t; stAnim = true; renderStudy(); }
 function renderStudy() {
   document.querySelectorAll('#stTabs .sub-tab').forEach(b => b.classList.toggle('active', b.dataset.st === stTab));
+  const hero = document.getElementById('stHero'); if (hero) hero.innerHTML = stHero();
   document.getElementById('stBody').innerHTML = ({ subjects: stSubjects, goals: stGoals, timer: stTimer, notes: stNotes, report: stReport })[stTab]();
+  stAnim = false;
   if (stTab === 'timer') tmUI();
 }
 const emptyBox = (i, t) => `<div class="empty" style="padding:22px 10px"><div class="empty-icon">${i}</div><p>${t}</p></div>`;
 
-/* المواد */
+/* المواد — خريطة */
+let stSel = '', stAnim = true;
+const SC = ['#0f5c45', '#c9a227', '#2a7fb8', '#b5543f', '#7a52a8', '#d9822b', '#1f9d8f', '#a53f78'];
+const SI = [[/رياض|جبر|هندس|تفاضل|math/i, '➗'], [/فيزياء|phys/i, '⚛️'], [/كيمياء|chem/i, '🧪'], [/أحياء|احياء|علوم|bio/i, '🧬'], [/عرب|نحو|أدب|ادب/i, '📜'], [/إنجليز|انجليز|english|لغة/i, '🔤'],
+  [/تاريخ/i, '🏛️'], [/جغراف/i, '🌍'], [/دين|إسلام|اسلام|قرآن|فقه|حديث|شريع/i, '🕌'], [/حاسب|برمج|computer|code/i, '💻'], [/اقتصاد|محاسب|تجار/i, '📈'], [/قانون|حقوق/i, '⚖️'], [/طب|تشريح|صيدل/i, '🩺'], [/فلسف|منطق|نفس|اجتماع/i, '🧠']];
+const subjIcon = n => { const m = SI.find(x => x[0].test(n)); return m ? m[1] : '📘'; };
+function subStat(sb) {
+  const L = sb.lessons || [], dn = L.filter(x => x.done).length, pct = L.length ? Math.round(dn / L.length * 100) : 0;
+  const mins = DATA.study.sessions.filter(x => x.sid === sb.id).reduce((a, x) => a + x.min, 0);
+  return { L, dn, pct, mins, dl: sb.exam ? daysTo(sb.exam) : null };
+}
+function mapLayout(n) {
+  const out = [], at = (r, i, k, size) => { const a = (-90 + 360 * i / k) * Math.PI / 180; return { x: 50 + r * Math.cos(a), y: 50 + r * Math.sin(a), size }; };
+  if (n <= 6) { for (let i = 0; i < n; i++) out.push(at(33, i, n, 22)); return { pts: out, hub: 26, rings: [33] }; }
+  const k1 = 5, k2 = n - 5, s2 = Math.max(10, Math.min(15, 2 * Math.PI * 39 / k2 - 3));
+  for (let i = 0; i < k1; i++) out.push(at(22, i, k1, 15));
+  for (let i = 0; i < k2; i++) out.push(at(39, i + 0.5, k2, s2));
+  return { pts: out, hub: 20, rings: [22, 39] };
+}
 function stSubjects() {
-  const S = DATA.study;
-  return `<div class="card"><div class="card-title"><span class="title-icon">📘</span> مادة جديدة</div>
+  const S = DATA.study, n = S.subjects.length;
+  if (!S.subjects.find(x => x.id === stSel)) stSel = '';
+  let tot = 0, dn = 0; S.subjects.forEach(sb => { const st = subStat(sb); tot += st.L.length; dn += st.dn; });
+  const all = tot ? Math.round(dn / tot * 100) : 0, lay = mapLayout(Math.max(n, 0));
+  const lines = S.subjects.map((sb, i) => `<line class="st-link" x1="50" y1="50" x2="${lay.pts[i].x.toFixed(2)}" y2="${lay.pts[i].y.toFixed(2)}" stroke="${SC[i % SC.length]}"/>`).join('');
+  const orbits = (n ? lay.rings : [30]).map((r, i) => `<circle class="st-orbit ${i ? 'rev' : ''}" cx="50" cy="50" r="${r}"/>`).join('');
+  const nodes = S.subjects.map((sb, i) => {
+    const st = subStat(sb), c = SC[i % SC.length], p = lay.pts[i];
+    const badge = st.pct === 100 && st.L.length ? '<span class="st-badge done">✓</span>' : (st.dl !== null && st.dl >= 0 && st.dl <= 14 ? `<span class="st-badge ${st.dl <= 7 ? 'hot' : ''}">${st.dl}ي</span>` : '');
+    return `<button class="st-node ${stAnim ? 'anim' : ''} ${sb.id === stSel ? 'sel' : ''}" style="left:${p.x.toFixed(2)}%;top:${p.y.toFixed(2)}%;width:${p.size}%;animation-delay:${i * 70}ms" onclick="stPick('${sb.id}')" aria-label="${escapeHtml(sb.name)}">
+      <div class="st-bubble" style="background:conic-gradient(${c} ${st.pct * 3.6}deg, ${c}33 0)"><div class="st-bubble-in"><span class="ic">${subjIcon(sb.name)}</span><span class="pc">${st.pct}%</span></div></div>${badge}
+      <span class="st-node-name">${escapeHtml(sb.name)}</span></button>`;
+  }).join('');
+  const hubSize = n ? lay.hub : 26;
+  const hub = `<div class="st-hub" style="width:${hubSize}%;aspect-ratio:1/1;background:conic-gradient(var(--gold-bright) ${all * 3.6}deg, rgba(201,162,39,.25) 0)"><div class="st-hub-in"><b>${all}%</b><small>${n ? 'إنجازك الكلي' : 'ابدأ هنا'}</small></div></div>`;
+  const form = `<div class="card"><div class="card-title"><span class="title-icon">📘</span> مادة جديدة</div>
     <input id="sbName" placeholder="اسم المادة (مثال: الفيزياء)"><label>موعد الامتحان (اختياري)</label><input type="date" id="sbExam">
-    <button class="btn btn-primary btn-block" onclick="addSubject()">＋ إضافة المادة</button></div>` +
-  (S.subjects.length ? S.subjects.map(sb => {
-    const L = sb.lessons || [], dn = L.filter(x => x.done).length, mins = S.sessions.filter(x => x.sid === sb.id).reduce((a, x) => a + x.min, 0), dl = sb.exam ? daysTo(sb.exam) : null;
-    return `<div class="card"><div class="card-title"><span class="title-icon gold">📖</span> ${escapeHtml(sb.name)} ${dl !== null ? `<span class="st-chip ${dl >= 0 && dl <= 7 ? 'hot' : ''}">${dl > 0 ? 'باقي ' + dl + ' يوم' : dl === 0 ? 'الامتحان اليوم' : 'انتهى الامتحان'}</span>` : ''}</div>
-      <div class="sunan-summary-row"><span>الدروس المنجزة ${dn}/${L.length}</span><strong>${(mins / 60).toFixed(1)} ساعة مذاكرة</strong></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${L.length ? dn / L.length * 100 : 0}%"></div></div>
-      <div style="margin-top:10px">${L.map(x => `<div class="check-item ${x.done ? 'done' : ''}" onclick="toggleLesson('${sb.id}','${x.id}')"><div class="checkbox"></div><div class="check-label">${escapeHtml(x.t)}</div><button class="action-btn delete" onclick="event.stopPropagation();delLesson('${sb.id}','${x.id}')">🗑</button></div>`).join('')}</div>
-      <div class="rem-add"><input id="ls-${sb.id}" placeholder="أضف درساً أو فصلاً"><button class="btn btn-primary btn-sm" onclick="addLesson('${sb.id}')" style="margin-bottom:11px">＋</button></div>
-      <button class="btn btn-ghost btn-sm btn-block" onclick="delSubject('${sb.id}')">حذف المادة</button></div>`;
-  }).join('') : emptyBox('📘', 'أضف موادك الدراسية لتبدأ'));
+    <button class="btn btn-primary btn-block" onclick="addSubject()">＋ أضف للخريطة</button></div>`;
+  return `<div class="card st-map-card"><div class="st-map-head">🗺️ خريطة موادك <small>${n ? 'اضغط على أي مادة' : ''}</small></div>
+    <div class="st-map"><svg class="st-lines" viewBox="0 0 100 100" preserveAspectRatio="none">${orbits}${lines}</svg>${hub}${nodes}
+    ${n ? '' : '<div class="st-empty-hint">خريطتك فاضية 🌱<br>أضف أول مادة وشوفها بتنور حوالين إنجازك</div>'}</div></div>
+    <div id="stDetail">${stDetail()}</div>${form}`;
+}
+function stPick(id) {
+  stSel = (stSel === id) ? '' : id;
+  document.querySelectorAll('.st-node').forEach((el, i) => el.classList.toggle('sel', DATA.study.subjects[i] && DATA.study.subjects[i].id === stSel));
+  const d = document.getElementById('stDetail'); if (d) { d.innerHTML = stDetail(); if (stSel) d.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+}
+function stDetail() {
+  const S = DATA.study, i = S.subjects.findIndex(x => x.id === stSel);
+  if (i < 0) return S.subjects.length ? `<div class="card" style="text-align:center;color:var(--text-muted);font-size:.85rem">👆 اضغط على مادة من الخريطة عشان تشوف دروسها وتتابع تقدمك</div>` : '';
+  const sb = S.subjects[i], st = subStat(sb), c = SC[i % SC.length];
+  const chip = st.dl !== null ? `<span class="st-chip ${st.dl >= 0 && st.dl <= 7 ? 'hot' : ''}">${st.dl > 0 ? 'باقي ' + st.dl + ' يوم' : st.dl === 0 ? 'الامتحان اليوم' : 'انتهى الامتحان'}</span>` : '';
+  const msg = !st.L.length ? 'ضيف دروس المادة وابدأ الرحلة' : st.pct === 100 ? '🎉 خلّصت المادة كلها، مبروك!' : st.pct >= 50 ? '💪 عدّيت النص، كمّل!' : 'كل درس تخلصه بيقرّبك للهدف';
+  return `<div class="card st-detail" style="--sc:${c}">
+    <div class="st-d-head"><div class="st-d-ic">${subjIcon(sb.name)}</div><div style="flex:1;min-width:0"><div class="st-d-name">${escapeHtml(sb.name)}</div><div style="font-size:.75rem;color:var(--text-muted)">${msg}</div></div>${chip}</div>
+    <div class="st-tiles"><div class="st-tile"><b>${st.dn}/${st.L.length}</b><span>الدروس</span></div><div class="st-tile"><b>${(st.mins / 60).toFixed(1)}</b><span>ساعة مذاكرة</span></div><div class="st-tile"><b>${st.pct}%</b><span>الإنجاز</span></div></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${st.pct}%"></div></div>
+    <div style="margin-top:10px">${st.L.map(x => `<div class="check-item ${x.done ? 'done' : ''}" onclick="toggleLesson('${sb.id}','${x.id}')"><div class="checkbox"></div><div class="check-label">${escapeHtml(x.t)}</div><button class="action-btn delete" onclick="event.stopPropagation();delLesson('${sb.id}','${x.id}')">🗑</button></div>`).join('')}</div>
+    <div class="rem-add"><input id="ls-${sb.id}" placeholder="أضف درساً أو فصلاً"><button class="btn btn-primary btn-sm" onclick="addLesson('${sb.id}')" style="margin-bottom:11px">＋</button></div>
+    <button class="btn btn-primary btn-block" onclick="startStudyFor('${sb.id}')">⏱ ابدأ جلسة مذاكرة</button>
+    <button class="btn btn-ghost btn-sm btn-block" style="margin-top:8px" onclick="delSubject('${sb.id}')">حذف المادة</button></div>`;
+}
+function startStudyFor(id) { TM.sid = id; stTab = 'timer'; renderStudy(); }
+const LVL = ['مبتدئ 🌱', 'مجتهد 📖', 'مثابر 🔥', 'متفوق ⭐', 'نابغة 🚀', 'عبقري 👑'];
+function stHero() {
+  const S = DATA.study, m = todayMin(), tg = S.target || 120, pc = Math.min(100, Math.round(m / tg * 100));
+  let streak = 0; const c = new Date(); for (let i = 0; i < 400; i++) { if (S.sessions.some(x => x.date === keyOf(c))) streak++; else if (i > 0) break; c.setDate(c.getDate() - 1); }
+  const totH = S.sessions.reduce((a, x) => a + x.min, 0) / 60, lv = Math.min(LVL.length - 1, Math.floor(totH / 5)), nxt = lv >= LVL.length - 1 ? 100 : (totH % 5) / 5 * 100;
+  const ex = S.subjects.filter(v => v.exam && daysTo(v.exam) >= 0).sort((a, b) => a.exam.localeCompare(b.exam))[0];
+  const [h, p] = m === 0 ? ['يلا نبدأ! 💪', 'جلسة واحدة 25 دقيقة بس، وأصعب خطوة هي الأولى.']
+    : pc < 50 ? ['بداية حلوة 👏', 'فاضل ' + (tg - m) + ' دقيقة على هدف النهارده، كمّل!']
+    : pc < 100 ? ['قربت جدًا 🔥', 'فاضل ' + (tg - m) + ' دقيقة بس، متوقفش دلوقتي!']
+    : ['حققت هدف اليوم 🎉', 'إنجاز رائع! كل دقيقة زيادة بتبني مستقبلك.'];
+  const C = 2 * Math.PI * 40;
+  return `<div class="st-hero"><div class="st-hero-row">
+    <div class="st-ring"><svg viewBox="0 0 100 100"><defs><linearGradient id="stGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9a227"/><stop offset="1" stop-color="#f3d96b"/></linearGradient></defs><circle class="trk" cx="50" cy="50" r="40"/><circle class="bar" cx="50" cy="50" r="40" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pc / 100)).toFixed(1)}"/></svg>
+      <div class="st-ring-c"><b>${pc}%</b><small>${m}/${tg} د</small></div></div>
+    <div class="st-hero-msg"><h3>${h}</h3><p>${p}</p></div></div>
+    <div class="st-chips">
+      <div class="st-pill"><b>🔥 ${streak}</b><span>يوم متتالي</span></div>
+      <div class="st-pill"><b>${LVL[lv]}</b><span>${totH.toFixed(1)} ساعة</span><div class="st-lvl"><i style="width:${nxt}%"></i></div></div>
+      <div class="st-pill"><b>${ex ? '⏳ ' + daysTo(ex.exam) + ' يوم' : '—'}</b><span>${ex ? escapeHtml(ex.name) : 'لا امتحان قريب'}</span></div>
+    </div></div>`;
 }
 function addSubject() {
   const n = document.getElementById('sbName').value.trim(); if (!n) { showToast('اكتب اسم المادة'); return; }
-  DATA.study.subjects.push({ id: uid(), name: n, exam: document.getElementById('sbExam').value, lessons: [] }); saveData(); renderStudy(); showToast('تمت إضافة المادة');
+  const nid = uid(); DATA.study.subjects.push({ id: nid, name: n, exam: document.getElementById('sbExam').value, lessons: [] }); stSel = nid; saveData(); renderStudy(); showToast('تمت إضافة المادة للخريطة 🗺️');
 }
-function delSubject(id) { askConfirm('حذف المادة بكل دروسها؟', () => { DATA.study.subjects = DATA.study.subjects.filter(x => x.id !== id); saveData(); renderStudy(); }); }
+function delSubject(id) { askConfirm('حذف المادة بكل دروسها؟', () => { DATA.study.subjects = DATA.study.subjects.filter(x => x.id !== id); if (stSel === id) stSel = ''; saveData(); renderStudy(); }); }
 function addLesson(id) {
   const el = document.getElementById('ls-' + id), t = el.value.trim(); if (!t) return;
   DATA.study.subjects.find(x => x.id === id).lessons.push({ id: uid(), t, done: false }); saveData(); renderStudy();
@@ -3241,7 +3443,7 @@ function tmToggle() {
 }
 function tmReset() { TM.running = false; TM.brk = false; TM.len = TM.left = TM.focusMin * 60; tmUI(); }
 function tmSetLen() { if (TM.running) return; TM.focusMin = parseInt(document.getElementById('tmLen').value) || 25; TM.brk = false; TM.len = TM.left = TM.focusMin * 60; tmUI(); }
-function logSession(min, sid) { DATA.study.sessions.push({ id: uid(), date: todayKey(), sid: sid || '', min }); saveData(); }
+function logSession(min, sid) { DATA.study.sessions.push({ id: uid(), date: todayKey(), sid: sid || '', min }); saveData(); const h = document.getElementById('stHero'); if (h) h.innerHTML = stHero(); }
 function manualSession() {
   const v = parseInt(document.getElementById('tmManual').value); if (!v || v < 1) { showToast('اكتب عدد الدقائق'); return; }
   logSession(v, document.getElementById('tmSub').value); document.getElementById('tmManual').value = ''; tmUI(); showToast('تم تسجيل ' + v + ' دقيقة');
@@ -3372,9 +3574,7 @@ function renderHome() {
     renderOccasions();
     renderBadges();
     const day = ensureToday();
-    document.querySelectorAll('#moodGrid .mood-btn').forEach(b =>
-      b.classList.toggle('active', parseInt(b.dataset.mood) === (day.mood || 0))
-    );
+    renderMood();
   } catch (e) { console.warn('renderHome', e); }
 }
 
@@ -3496,7 +3696,7 @@ function renderHealth() {
   if (ev) ev.textContent = day.exercise ? day.exercise + 'د' : '—';
   if (wv) wv.textContent = day.weight ? day.weight : '—';
   if (wi && document.activeElement !== wi) wi.value = day.weight || '';
-  if (mv) mv.textContent = day.mood ? day.mood + '/5' : '—';
+  if (mv) mv.textContent = day.mood ? MOOD_NAMES[day.mood] : '—';
   if (mi) mi.textContent = MOOD_ICONS[day.mood || 0] || '—';
 }
 function adjSleep(d) {
@@ -3779,11 +3979,20 @@ document.addEventListener('visibilitychange', () => {
     checkReminders();
     scheduleAllReminders();
     updatePrayerTimes();
+    try { checkPrayerNow(); } catch (e) {}
   }
 });
 
-updatePrayerTimes();
-setInterval(() => { updatePrayerTimes(); checkReminders(); }, 15000);
+try { renderDua(); } catch (e) {}
+document.addEventListener('click', function firstTap() {
+  document.removeEventListener('click', firstTap);
+  try {
+    if (DATA.settings && DATA.settings.prayerNotif === undefined && 'Notification' in window && Notification.permission === 'default') togglePrayerNotif();
+  } catch (e) {}
+}, { once: true });
+try { checkPrayerNow(); } catch (e) {}
+try { updatePrayerTimes(); } catch (e) { console.error(e); }
+setInterval(() => { try { updatePrayerTimes(); checkPrayerNow(); } catch (e) {} checkReminders(); }, 15000);
 // Also check more frequently when possible
 setInterval(checkReminders, 30000);
 init();
